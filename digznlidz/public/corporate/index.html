@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corporate & Private Events | Digz N' Lidz</title>
+  <link rel="stylesheet" href="/assets/css/base.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>Corporate & private events</h1>
+    <div class="card">
+      <p>Tell us about your event. We will get in touch to confirm details before any payment is taken.</p>
+      <form id="enquiry-form">
+        <label>Company (if applicable)</label>
+        <input id="companyName" style="width:100%;padding:10px;margin:8px 0;">
+
+        <label>Contact name</label>
+        <input id="contactName" required style="width:100%;padding:10px;margin:8px 0;">
+
+        <label>Email</label>
+        <input id="email" type="email" required style="width:100%;padding:10px;margin:8px 0;">
+
+        <label>Phone</label>
+        <input id="phone" style="width:100%;padding:10px;margin:8px 0;">
+
+        <label>Preferred date</label>
+        <input id="eventDate" type="date" style="width:100%;padding:10px;margin:8px 0;">
+
+        <label>Headcount</label>
+        <input id="headcount" type="number" min="1" style="width:100%;padding:10px;margin:8px 0;">
+
+        <label>Event details</label>
+        <textarea id="eventDetails" style="width:100%;padding:10px;margin:8px 0;"></textarea>
+
+        <button type="submit">Send enquiry</button>
+      </form>
+      <div id="error" class="error"></div>
+      <div id="success" style="color:var(--gold);margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <script src="/assets/js/corporate.js"></script>
+</body>
+</html>
