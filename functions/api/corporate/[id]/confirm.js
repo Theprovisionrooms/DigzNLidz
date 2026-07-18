@@ -5,8 +5,11 @@
 
 import { createPaymentLink } from "../../../lib/square.js";
 import { sendEmail } from "../../../lib/email.js";
+import { isAuthenticated, unauthorizedResponse } from "../../../lib/auth.js";
 
 export async function onRequestPost({ params, request, env }) {
+  if (!(await isAuthenticated(request, env))) return unauthorizedResponse();
+
   const enquiryId = params.id;
   const body = await request.json().catch(() => ({}));
   const depositPence = body.depositPence; // larger corporate deposit, set per event

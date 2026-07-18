@@ -26,3 +26,5 @@ bucket_name = "digznlidz-assets"
 # SQUARE_WEBHOOK_SIGNATURE_KEY
 # SQUARE_ENV                ("sandbox" or "production")
 # RESEND_API_KEY
+# DASHBOARD_PASSWORD         (shared staff password for /dashboard)
+# DASHBOARD_SECRET           (random string used to sign session cookies)

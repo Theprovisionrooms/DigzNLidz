@@ -32,7 +32,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Corporate confirm endpoint (staff-triggered, auto-generates + emails payment link)
 - [x] Booking form UI (public site) — /book/
 - [x] Corporate enquiry UI — /corporate/
-- [ ] Corporate staff confirm UI (currently API only, no internal screen yet)
+- [x] Corporate staff confirm UI — lives in the dashboard (/dashboard)
 
 ## QR seat sessions
 - [x] Generate 16 unique seat QR codes — public/assets/qr/seat-1.png to seat-16.png
@@ -79,12 +79,14 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [ ] Micro-interactions (buttons, transitions)
 
 ## Dashboard (owner-facing)
-- [ ] Live seat status view
-- [ ] Bookings overview (today/week, by type)
-- [ ] Revenue breakdown (seat time / extensions / food / deposits)
-- [ ] Promo/campaign performance
-- [ ] Mailing list growth
-- [ ] Site traffic + conversion
+- [x] Password-gated access (/dashboard, shared staff password, signed session cookie)
+- [x] Live seat status view (colour-coded grid)
+- [x] Bookings overview (today by type, this week total)
+- [x] Revenue breakdown (deposits / extensions / food & drink)
+- [x] Mailing list growth (current total, trend over time still to add)
+- [x] Corporate enquiries: confirm + auto-send payment link, right from the dashboard
+- [ ] Promo/campaign performance (waiting on campaigns/discount code build-out)
+- [ ] Site traffic + conversion (needs an analytics source, e.g. Cloudflare Web Analytics)
 
 ## SEO / AI discoverability
 - [ ] LocalBusiness + FAQ schema
