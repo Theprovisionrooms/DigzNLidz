@@ -13,7 +13,7 @@ SQUARE_LOCATION_ID_PUBLIC = "REPLACE_WITH_LOCATION_ID"  # public, safe client-si
 [[d1_databases]]
 binding = "DB"
 database_name = "digznlidz-db"
-database_id = "REPLACE_AFTER_D1_CREATE"
+database_id = "ed184220-8583-4633-9d47-ea653402f93e"
 
 [[r2_buckets]]
 binding = "MEDIA"
