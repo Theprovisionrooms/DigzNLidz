@@ -16,7 +16,7 @@ database_name = "digznlidz-db"
 database_id = "REPLACE_AFTER_D1_CREATE"
 
 [[r2_buckets]]
-binding = "ASSETS"
+binding = "MEDIA"
 bucket_name = "digznlidz-assets"
 
 # Square + Resend keys go in Cloudflare Pages environment variables / secrets,
