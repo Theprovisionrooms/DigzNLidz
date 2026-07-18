@@ -57,7 +57,7 @@ export async function createPaymentLink(env, { amountPence, reference, descripti
 // Apple Pay, or Google Pay token client-side using the Square Web Payments
 // SDK, and passes the resulting sourceId here so the customer never leaves
 // the seat page.
-export async function chargeSourceId(env, { sourceId, amountPence, reference }) {
+export async function chargeSourceId(env, { sourceId, amountPence, reference, customerId }) {
   const data = await squareFetch(env, "/v2/payments", {
     method: "POST",
     body: JSON.stringify({
@@ -66,6 +66,7 @@ export async function chargeSourceId(env, { sourceId, amountPence, reference }) 
       amount_money: { amount: amountPence, currency: "GBP" },
       location_id: env.SQUARE_LOCATION_ID,
       note: reference,
+      ...(customerId ? { customer_id: customerId } : {}),
     }),
   });
   return {
@@ -77,6 +78,68 @@ export async function chargeSourceId(env, { sourceId, amountPence, reference }) 
 export async function getPayment(env, paymentId) {
   const data = await squareFetch(env, `/v2/payments/${paymentId}`, { method: "GET" });
   return data.payment;
+}
+
+// --- Card on file ---
+// Used so a seat session only has to collect card details once, extends
+// and food/drink orders after that charge the saved card directly.
+
+// A lightweight customer scoped to this seat visit, not a marketing
+// contact, just something to attach a card on file to.
+export async function createCustomer(env, { referenceId }) {
+  const data = await squareFetch(env, "/v2/customers", {
+    method: "POST",
+    body: JSON.stringify({
+      idempotency_key: crypto.randomUUID(),
+      reference_id: referenceId,
+    }),
+  });
+  return data.customer.id;
+}
+
+// Saves the card used in a payment that's just gone through, so it can be
+// reused for the rest of this visit without asking again.
+export async function saveCardFromPayment(env, { paymentId, customerId }) {
+  const data = await squareFetch(env, "/v2/cards", {
+    method: "POST",
+    body: JSON.stringify({
+      idempotency_key: crypto.randomUUID(),
+      source_id: paymentId,
+      card: { customer_id: customerId },
+    }),
+  });
+  return data.card.id;
+}
+
+// Charges a card already on file. No card form, no re-entered details,
+// just the amount and a reference.
+export async function chargeCardOnFile(env, { customerId, cardId, amountPence, reference }) {
+  const data = await squareFetch(env, "/v2/payments", {
+    method: "POST",
+    body: JSON.stringify({
+      idempotency_key: crypto.randomUUID(),
+      source_id: cardId,
+      customer_id: customerId,
+      amount_money: { amount: amountPence, currency: "GBP" },
+      location_id: env.SQUARE_LOCATION_ID,
+      note: reference,
+    }),
+  });
+  return {
+    providerRef: data.payment.id,
+    status: data.payment.status,
+  };
+}
+
+// Best-effort cleanup once a seat session ends, so we're not holding onto
+// a customer's card after they've left. Never throws, a Square hiccup here
+// should never stop the seat freeing up for the next customer.
+export async function disableCard(env, cardId) {
+  try {
+    await squareFetch(env, `/v2/cards/${cardId}/disable`, { method: "POST" });
+  } catch (e) {
+    console.error("Square disableCard failed", e);
+  }
 }
 
 // Verifies the signature Square sends on webhook requests so payment

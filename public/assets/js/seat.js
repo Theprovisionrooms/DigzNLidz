@@ -8,6 +8,7 @@ document.getElementById("seat-title").textContent = seatId ? `Seat ${seatId}` : 
 let config = null;
 let squarePayments = null;
 let pollTimer = null;
+let currentSession = null;
 
 async function loadSquareSdk(env) {
   return new Promise((resolve, reject) => {
@@ -41,6 +42,7 @@ async function init() {
 async function refresh() {
   const res = await fetch(`/api/seats/${seatId}`);
   const data = await res.json();
+  currentSession = data.session;
   render(data);
 }
 
@@ -55,7 +57,7 @@ function renderTierPicker() {
     <div class="tier-option">
       <div>
         <strong>${tier.name}</strong><br>
-        <small>${tier.minutes} minutes${tier.pricePence > 0 ? ` — £${(tier.pricePence / 100).toFixed(2)}` : ""}</small>
+        <small>${tier.minutes} minutes${tier.pricePence > 0 ? ` · £${(tier.pricePence / 100).toFixed(2)}` : ""}</small>
       </div>
       <button data-tier="${key}" class="start-tier-btn" style="width:auto;">Start</button>
     </div>
@@ -95,18 +97,22 @@ async function startTier(tierKey) {
     return;
   }
 
-  await collectCardAndSubmit(async (sourceId) => {
-    const res = await fetch(`/api/seats/${seatId}/start`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tier: tierKey, sourceId }),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Payment failed");
-    }
-    refresh();
-  });
+  try {
+    await collectCardAndSubmit(async (sourceId) => {
+      const res = await fetch(`/api/seats/${seatId}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier: tierKey, sourceId }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Payment failed");
+      }
+      refresh();
+    }, tier.pricePence);
+  } catch (e) {
+    errorEl.textContent = e.message;
+  }
 }
 
 function renderActiveSession(session) {
@@ -115,10 +121,13 @@ function renderActiveSession(session) {
     <div class="card">
       <h2>Session running</h2>
       <div class="timer" id="countdown">--:--</div>
+      <button id="finish-early-btn" class="secondary">I'm finished</button>
     </div>
     ${renderMenu()}
   `;
   bindMenuHandlers();
+
+  document.getElementById("finish-early-btn").addEventListener("click", endSession);
 
   const endsAt = new Date(session.ends_at).getTime();
   function tick() {
@@ -142,6 +151,8 @@ function renderActiveSession(session) {
 function renderExtensionPrompt() {
   clearInterval(window.__countdownInterval);
   const price = (config.extension.pricePence / 100).toFixed(2);
+  const cardOnFile = !!currentSession?.cardOnFile;
+
   app.innerHTML = `
     <div class="card">
       <h2>Time's up</h2>
@@ -155,33 +166,61 @@ function renderExtensionPrompt() {
 
   document.getElementById("extend-yes").addEventListener("click", async () => {
     const errorEl = document.getElementById("extend-error");
+    errorEl.textContent = "";
     try {
-      await collectCardAndSubmit(async (sourceId) => {
+      if (cardOnFile) {
+        // Card already on file for this visit, one tap, no form.
         const res = await fetch(`/api/seats/${seatId}/extend`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sourceId }),
+          body: JSON.stringify({}),
         });
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || "Payment failed");
         }
         refresh();
-      });
+      } else {
+        await collectCardAndSubmit(async (sourceId) => {
+          const res = await fetch(`/api/seats/${seatId}/extend`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sourceId }),
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Payment failed");
+          }
+          refresh();
+        }, config.extension.pricePence);
+      }
     } catch (e) {
       errorEl.textContent = e.message;
     }
   });
 
-  document.getElementById("extend-no").addEventListener("click", () => {
-    app.innerHTML = `<div class="card"><h2>Thanks for playing</h2><p>Scan again any time to start a new session.</p></div>`;
-    clearInterval(pollTimer);
-  });
+  document.getElementById("extend-no").addEventListener("click", endSession);
+}
+
+// Ends the visit: frees the seat for the next scan and disables any card
+// on file for this session, server-side.
+async function endSession() {
+  clearInterval(pollTimer);
+  clearInterval(window.__countdownInterval);
+  app.innerHTML = `<div class="card"><h2>Thanks for playing</h2><p>Scan again any time to start a new session.</p></div>`;
+  try {
+    await fetch(`/api/seats/${seatId}/end`, { method: "POST" });
+  } catch (e) {
+    // Seat page already shows the thank-you message either way, this is
+    // just cleanup, no need to surface a network hiccup to the customer.
+    console.error("end session failed", e);
+  }
 }
 
 // Renders a Square card element into #card-container and resolves with a
-// sourceId once the customer submits, or rejects on failure.
-async function collectCardAndSubmit(onToken) {
+// sourceId once the customer submits, or rejects on failure. amountPence
+// is passed through to Square's SCA verification during tokenize.
+async function collectCardAndSubmit(onToken, amountPence) {
   const container = document.getElementById("card-container");
   container.innerHTML = "";
   const card = await squarePayments.card();
@@ -196,7 +235,13 @@ async function collectCardAndSubmit(onToken) {
       payBtn.disabled = true;
       payBtn.textContent = "Processing...";
       try {
-        const result = await card.tokenize();
+        const result = await card.tokenize({
+          amount: (amountPence / 100).toFixed(2),
+          currencyCode: "GBP",
+          intent: "CHARGE",
+          customerInitiated: true,
+          sellerKeyedIn: false,
+        });
         if (result.status !== "OK") throw new Error("Card details not accepted");
         await onToken(result.token);
         resolve();
@@ -222,7 +267,7 @@ const cart = {};
 function renderMenu() {
   const rows = MENU.map((item) => `
     <div class="item-row">
-      <div>${item.name} — £${(item.pricePence / 100).toFixed(2)}</div>
+      <div>${item.name} · £${(item.pricePence / 100).toFixed(2)}</div>
       <div class="qty-controls">
         <button data-item="${item.id}" data-dir="-1">-</button>
         <span id="qty-${item.id}">0</span>
@@ -261,23 +306,41 @@ function bindMenuHandlers() {
       errorEl.textContent = "Add something to your order first.";
       return;
     }
-    const orderContainer = document.getElementById("order-container");
-    orderContainer.id = "card-container"; // reuse card mount point
+
+    const totalPence = items.reduce((sum, item) => sum + item.pricePence * item.quantity, 0);
+    const cardOnFile = !!currentSession?.cardOnFile;
+
     try {
-      await collectCardAndSubmit(async (sourceId) => {
+      if (cardOnFile) {
+        // Card already on file for this visit, place the order straight away.
         const res = await fetch(`/api/seats/${seatId}/order`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items, sourceId }),
+          body: JSON.stringify({ items }),
         });
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || "Order failed");
         }
-        errorEl.textContent = "";
         errorEl.style.color = "var(--yellow)";
         errorEl.textContent = "Order placed, on its way!";
-      });
+      } else {
+        const orderContainer = document.getElementById("order-container");
+        orderContainer.id = "card-container"; // reuse card mount point
+        await collectCardAndSubmit(async (sourceId) => {
+          const res = await fetch(`/api/seats/${seatId}/order`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items, sourceId }),
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Order failed");
+          }
+          errorEl.style.color = "var(--yellow)";
+          errorEl.textContent = "Order placed, on its way!";
+        }, totalPence);
+      }
     } catch (e) {
       errorEl.textContent = e.message;
     }

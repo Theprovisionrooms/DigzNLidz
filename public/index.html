@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digz N' Lidz | RC Experience Cafe</title>
   <meta name="description" content="Book the RC Experience Cafe. Family, group and corporate sessions on our 16-seat RC sandpit, plus food and drink ordered straight to your seat.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/home.css">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -16,33 +20,127 @@
   }
   </script>
 </head>
-<body>
+<body class="home">
+  <div class="texture-bg"></div>
+
   <img class="digger-float d1" src="/assets/img/diggers/digger-2.webp" alt="">
   <img class="digger-float d2" src="/assets/img/diggers/digger-3.webp" alt="">
   <img class="digger-float d3" src="/assets/img/diggers/digger-1.webp" alt="">
 
-  <div class="wrap">
-    <img class="brand-logo" src="/assets/img/branding/logo.webp" alt="Digz N' Lidz RC Experience Cafe">
-    <div class="hazard-divider"></div>
+  <header class="home-wrap home-topbar">
+    <img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz RC Experience Cafe">
+    <nav>
+      <a href="/faq/">FAQ</a>
+      <a href="/blog/">Blog</a>
+      <a href="/podcast/">Podcast</a>
+      <a href="/corporate/">Corporate</a>
+    </nav>
+  </header>
 
-    <div class="card">
-      <h2>Book your session</h2>
-      <p>Family, group, or a full RC sandpit takeover for corporate and private events.</p>
-      <a href="/book/"><button>Book now</button></a>
-      <a href="/corporate/"><button class="secondary">Corporate & private events</button></a>
+  <section class="home-wrap hero">
+    <span class="eyebrow">RC Experience Cafe</span>
+    <h1>Get stuck<br><span>in.</span></h1>
+    <p>Sixteen seats. A full RC digger sandpit. Food and drink brought straight to you. Built for birthday parties, family days out, and work dos people actually talk about after.</p>
+    <div class="hero-ctas">
+      <a href="/book/"><span class="btn-primary">Book your session</span></a>
+      <a href="/corporate/"><span class="btn-ghost">Corporate & private events</span></a>
     </div>
+  </section>
 
-    <div class="card">
-      <h2>At your seat</h2>
-      <p>Already in? Scan the QR code at your seat to start your session and order food or drink straight to you.</p>
-    </div>
+  <div class="hazard-rule"></div>
 
-    <div class="card">
-      <h2>More</h2>
-      <a href="/faq/" style="color:var(--yellow);display:block;margin-bottom:8px;">FAQ</a>
-      <a href="/blog/" style="color:var(--yellow);display:block;margin-bottom:8px;">Blog</a>
-      <a href="/podcast/" style="color:var(--yellow);display:block;">Podcast</a>
+  <section class="section">
+    <div class="home-wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">What's here</span>
+        <h2>One site, three ways in</h2>
+        <p>Turn up for a session, order without leaving your seat, or take the whole place over for the day.</p>
+      </div>
+      <div class="pillars">
+        <div class="pillar reveal">
+          <h3>RC Sandpit Sessions</h3>
+          <p>Real diggers, real controls, sixteen seats on the floor. Pick a slot, and the time's yours to dig.</p>
+          <a href="/book/">Book a seat &rarr;</a>
+        </div>
+        <div class="pillar reveal">
+          <h3>Food & Drink, To Your Seat</h3>
+          <p>Scan the QR at your seat, order, keep digging. Nobody's queuing at a counter with sand on their hands.</p>
+          <a href="/faq/">How it works &rarr;</a>
+        </div>
+        <div class="pillar reveal">
+          <h3>Corporate & Private Hire</h3>
+          <p>Full site takeover for team days, birthdays and events that don't feel like a booked meeting room.</p>
+          <a href="/corporate/">Enquire &rarr;</a>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <section class="section on-dirt">
+    <div class="home-wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Already booked in?</span>
+        <h2>How your visit runs</h2>
+        <p>No queueing, no app to download, nothing to remember. Your seat does the work.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <h4>Book or walk in</h4>
+          <p>Reserve online, or turn up and get seated on the day.</p>
+        </div>
+        <div class="step reveal">
+          <h4>Scan at your seat</h4>
+          <p>One scan starts your session. No sign up, no app.</p>
+        </div>
+        <div class="step reveal">
+          <h4>Order if you fancy it</h4>
+          <p>Food and drink sent straight to your seat, whenever suits.</p>
+        </div>
+        <div class="step reveal">
+          <h4>Time's up, you're done</h4>
+          <p>No counter, no faff. Just get up and go when you're ready.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="home-wrap">
+      <div class="hub-teaser reveal">
+        <div class="hub-copy">
+          <span class="eyebrow">More than a sandpit</span>
+          <h2 style="font-size:28px;text-transform:uppercase;color:var(--yellow);margin:10px 0 12px;">Behind the diggers</h2>
+          <p style="color:var(--bone);opacity:0.8;line-height:1.55;max-width:440px;margin:0;">We write and record the stories from the site, the builds, the bookings, the odd digger disaster. Have a read, have a listen, and see what's coming next.</p>
+        </div>
+        <div class="hub-links">
+          <a class="hub-link" href="/blog/">Blog <span>&rarr;</span></a>
+          <a class="hub-link" href="/podcast/">Podcast <span>&rarr;</span></a>
+          <a class="hub-link" href="/faq/">FAQ <span>&rarr;</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="hazard-rule"></div>
+
+  <footer class="home-wrap home-footer">
+    <p>Digz N' Lidz RC Experience Cafe</p>
+  </footer>
+
+  <script>
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-visible");
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+    } else {
+      document.querySelectorAll(".reveal").forEach((el) => el.classList.add("is-visible"));
+    }
+  </script>
 </body>
 </html>

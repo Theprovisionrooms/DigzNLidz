@@ -1,13 +1,13 @@
-# Digz N' Lidz — Build Checklist
+# Digz N' Lidz, Build Checklist
 
 Internal tracking doc. Not for client. Update as we go so nothing gets lost across sessions.
 
 ## Setup
 - [x] Build brief written and delivered
-- [x] GitHub repo created — Theprovisionrooms/DigzNLidz
+- [x] GitHub repo created, Theprovisionrooms/DigzNLidz
 - [x] Project scaffold created locally
-- [x] Domain confirmed — digznlidz.co.uk (to connect in Cloudflare Pages once live)
-- [x] Payment provider decided — Square (matches their existing till)
+- [x] Domain confirmed, digznlidz.co.uk (to connect in Cloudflare Pages once live)
+- [x] Payment provider decided, Square (matches their existing till)
 - [ ] Square account access confirmed (API keys, sandbox access)
 - [ ] Branding assets received (logo files, photography, digger imagery direction)
 - [ ] Tier names + pricing confirmed (currently Tier 1/2/3, 15/30/60 min)
@@ -22,7 +22,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] discount_codes (code, campaign_id, percent/fixed, expiry, usage_limit, uses)
 - [x] campaigns (name, sent_date, type)
 - [x] corporate_enquiries (details, status, confirmed_by, payment_link_sent)
-- [x] settings (tier config, pricing, extension price, timings) — editable without redeploy
+- [x] settings (tier config, pricing, extension price, timings), editable without redeploy
 
 ## Core booking flow
 - [x] Family/group booking endpoint (creates booking, returns Square deposit checkout link)
@@ -30,22 +30,24 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Booking confirmation email (Resend)
 - [x] Corporate enquiry endpoint (no payment)
 - [x] Corporate confirm endpoint (staff-triggered, auto-generates + emails payment link)
-- [x] Booking form UI (public site) — /book/
-- [x] Corporate enquiry UI — /corporate/
-- [x] Corporate staff confirm UI — lives in the dashboard (/dashboard)
+- [x] Booking form UI (public site), /book/
+- [x] Corporate enquiry UI, /corporate/
+- [x] Corporate staff confirm UI, lives in the dashboard (/dashboard)
 
 ## QR seat sessions
-- [x] Generate 16 unique seat QR codes — public/assets/qr/seat-1.png to seat-16.png
-- [x] Seat landing page (start session / order food) — /seat/?seat=N
+- [x] Generate 16 unique seat QR codes, public/assets/qr/seat-1.png to seat-16.png
+- [x] Seat landing page (start session / order food), /seat/?seat=N
 - [x] Seat status endpoint (GET /api/seats/:id)
 - [x] Start session endpoint, handles paid tiers via Square Web Payments SDK sourceId
 - [x] Extend session endpoint ("add 15 min for £5", instant Square charge)
 - [x] Cron worker to flip expired sessions to awaiting_extension
 - [x] Public config endpoint (/api/config) for Square app/location IDs and tier pricing
+- [x] Card on file: first payment of a visit saves the card, extend and food orders after that charge it directly, no re-entered card details (migrations/0002_card_on_file.sql, functions/lib/square.js, seats/[id]/start.js, extend.js, order.js)
+- [x] End-of-visit endpoint (POST /api/seats/:id/end): frees the seat, disables the card on file. Also fixes a gap where a seat never went back to "free" after the customer finished, "no I'm done" and the new "I'm finished" button both call it now
 - [ ] Live seat state sync to dashboard (build once dashboard exists)
 
 ## Food & drink ordering
-- [ ] Real menu and pricing from Digz N' Lidz — currently placeholder items (squash/crisps/hot dog) in seat.js
+- [ ] Real menu and pricing from Digz N' Lidz, currently placeholder items (squash/crisps/hot dog) in seat.js
 - [x] Order endpoint, tagged to seat + session, charged via Square sourceId
 - [x] Order UI on seat page
 - [ ] Order sent to staff (screen or email/print, TBC)
@@ -61,17 +63,17 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Signup capture endpoint
 - [x] Booking confirmation auto-adds to mailing list
 - [ ] Resend templates styled to brand
-- [ ] Cron-triggered automated campaigns (e.g. win-back) — codes can be created manually for now, auto-send not built yet
+- [ ] Cron-triggered automated campaigns (e.g. win-back), codes can be created manually for now, auto-send not built yet
 - [x] Discount code redemption logic wired into booking checkout
 - [x] Dashboard: create discount codes, view redemption counts
 
 ## Content pages
-- [x] Home — real logo, hazard divider, floating digger artwork, links out
-- [x] Book — /book/
-- [x] Corporate — /corporate/
-- [x] Blog — /blog/, JSON-driven (public/blog/posts.json), add posts by editing that file
-- [x] Podcast page — /podcast/, placeholder Spotify/Apple embeds, needs real show links
-- [x] FAQ — /faq/ (with FAQPage schema for SEO/AI discoverability)
+- [x] Home, real logo, hazard divider, floating digger artwork, links out
+- [x] Book, /book/
+- [x] Corporate, /corporate/
+- [x] Blog, /blog/, JSON-driven (public/blog/posts.json), add posts by editing that file
+- [x] Podcast page, /podcast/, placeholder Spotify/Apple embeds, needs real show links
+- [x] FAQ, /faq/ (with FAQPage schema for SEO/AI discoverability)
 - [ ] Contact
 
 ## Design & animation
@@ -80,8 +82,9 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Floating/drifting digger animation (CSS only, no JS cost), hidden on small screens to avoid clutter
 - [x] Hazard stripe divider component
 - [ ] Custom typography beyond system fallback (Oswald referenced, not yet loaded as a webfont)
-- [ ] Boot/intro animation, micro-interactions — not started
+- [ ] Boot/intro animation, micro-interactions, not started
 - [ ] Full pass across every page (currently homepage/blog/podcast updated, seat/book/corporate/dashboard still on older card styling, now using the corrected colour variables at least)
+- [x] Homepage rebuilt: hero, offer pillars, real "how your visit runs" sequence, blog/podcast/FAQ hub teaser, Oswald now actually loading as a webfont (public/index.html, public/assets/css/home.css)
 
 ## Dashboard (owner-facing)
 - [x] Password-gated access (/dashboard, shared staff password, signed session cookie)

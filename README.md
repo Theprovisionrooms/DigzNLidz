@@ -1,4 +1,4 @@
-# Digz N' Lidz — RC Experience Cafe
+# Digz N' Lidz: RC Experience Cafe
 
 Full booking, session, ordering and analytics system for Digz N' Lidz.
 
@@ -9,12 +9,12 @@ Built and maintained by Sidedoor Digital (getsidedoor.co.uk).
 
 ## Stack
 
-- Cloudflare Pages — static site hosting
-- Cloudflare Workers (Pages Functions) — API
-- Cloudflare D1 — database
-- Cloudflare R2 — image/asset storage
-- Square — payments, till sync, catalog (deposits, session extensions, QR orders)
-- Resend — transactional and marketing email
+- Cloudflare Pages, static site hosting
+- Cloudflare Workers (Pages Functions), API
+- Cloudflare D1, database
+- Cloudflare R2, image/asset storage
+- Square, payments, till sync, catalog (deposits, session extensions, QR orders)
+- Resend, transactional and marketing email
 
 ## Structure
 
