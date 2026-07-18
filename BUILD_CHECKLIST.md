@@ -66,19 +66,22 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Dashboard: create discount codes, view redemption counts
 
 ## Content pages
-- [ ] Home — currently a plain placeholder, needs real content + design pass
+- [x] Home — real logo, hazard divider, floating digger artwork, links out
 - [x] Book — /book/
 - [x] Corporate — /corporate/
-- [ ] Blog (flat markdown, build-time render)
-- [ ] Podcast page
+- [x] Blog — /blog/, JSON-driven (public/blog/posts.json), add posts by editing that file
+- [x] Podcast page — /podcast/, placeholder Spotify/Apple embeds, needs real show links
 - [x] FAQ — /faq/ (with FAQPage schema for SEO/AI discoverability)
 - [ ] Contact
 
 ## Design & animation
-- [ ] Brand palette + type locked in (black/yellow/rust, industrial stencil)
-- [ ] Digger artwork direction confirmed with Jordan
-- [ ] Boot/intro animation
-- [ ] Micro-interactions (buttons, transitions)
+- [x] Real logo and brand colours in use (black/yellow/rust, from actual logo, not a generic placeholder)
+- [x] Digger artwork sourced from Jordan (3 transparent PNGs, optimised to webp, ~100KB each)
+- [x] Floating/drifting digger animation (CSS only, no JS cost), hidden on small screens to avoid clutter
+- [x] Hazard stripe divider component
+- [ ] Custom typography beyond system fallback (Oswald referenced, not yet loaded as a webfont)
+- [ ] Boot/intro animation, micro-interactions — not started
+- [ ] Full pass across every page (currently homepage/blog/podcast updated, seat/book/corporate/dashboard still on older card styling, now using the corrected colour variables at least)
 
 ## Dashboard (owner-facing)
 - [x] Password-gated access (/dashboard, shared staff password, signed session cookie)

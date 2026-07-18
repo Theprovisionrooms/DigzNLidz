@@ -275,7 +275,7 @@ function bindMenuHandlers() {
           throw new Error(err.error || "Order failed");
         }
         errorEl.textContent = "";
-        errorEl.style.color = "var(--gold)";
+        errorEl.style.color = "var(--yellow)";
         errorEl.textContent = "Order placed, on its way!";
       });
     } catch (e) {
