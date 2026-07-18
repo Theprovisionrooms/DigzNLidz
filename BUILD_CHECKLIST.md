@@ -61,15 +61,17 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Signup capture endpoint
 - [x] Booking confirmation auto-adds to mailing list
 - [ ] Resend templates styled to brand
-- [ ] Cron-triggered automated campaigns (e.g. win-back)
-- [ ] Discount code redemption logic wired into checkout
+- [ ] Cron-triggered automated campaigns (e.g. win-back) — codes can be created manually for now, auto-send not built yet
+- [x] Discount code redemption logic wired into booking checkout
+- [x] Dashboard: create discount codes, view redemption counts
 
 ## Content pages
-- [ ] Home
-- [ ] Book (family/group/corporate)
+- [ ] Home — currently a plain placeholder, needs real content + design pass
+- [x] Book — /book/
+- [x] Corporate — /corporate/
 - [ ] Blog (flat markdown, build-time render)
 - [ ] Podcast page
-- [ ] FAQ
+- [x] FAQ — /faq/ (with FAQPage schema for SEO/AI discoverability)
 - [ ] Contact
 
 ## Design & animation

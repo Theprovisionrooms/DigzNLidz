@@ -41,6 +41,62 @@ async function loadDashboard() {
   }
   const data = await res.json();
   render(data);
+  loadDiscountCodes();
+}
+
+async function loadDiscountCodes() {
+  const res = await fetch("/api/dashboard/discount-codes");
+  if (!res.ok) return;
+  const data = await res.json();
+  const list = document.getElementById("discount-list");
+  if (data.codes.length === 0) {
+    list.innerHTML = `<p><small>No codes yet.</small></p>`;
+    return;
+  }
+  list.innerHTML = `
+    <table>
+      <tr><th>Code</th><th>Value</th><th>Campaign</th><th>Uses</th></tr>
+      ${data.codes.map((c) => `
+        <tr>
+          <td>${c.code}</td>
+          <td>${c.discount_type === "percent" ? c.discount_value + "%" : pence(c.discount_value)}</td>
+          <td>${c.campaign_name || "-"}</td>
+          <td>${c.uses}${c.usage_limit ? " / " + c.usage_limit : ""}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+async function createDiscountCode() {
+  const code = document.getElementById("dc-code").value.trim();
+  const discountType = document.getElementById("dc-type").value;
+  const discountValue = Number(document.getElementById("dc-value").value);
+  const campaignName = document.getElementById("dc-campaign").value.trim() || null;
+  const usageLimit = Number(document.getElementById("dc-limit").value) || null;
+
+  if (!code || !discountValue) {
+    alert("Enter a code and a value first.");
+    return;
+  }
+
+  const res = await fetch("/api/dashboard/discount-codes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, discountType, discountValue, campaignName, usageLimit }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    alert(err.error || "Something went wrong");
+    return;
+  }
+
+  document.getElementById("dc-code").value = "";
+  document.getElementById("dc-value").value = "";
+  document.getElementById("dc-campaign").value = "";
+  document.getElementById("dc-limit").value = "";
+  loadDiscountCodes();
 }
 
 function render(data) {

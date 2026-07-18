@@ -61,6 +61,21 @@
         <h2>Corporate enquiries awaiting confirmation</h2>
         <div id="corporate-list"></div>
       </div>
+
+      <div class="card">
+        <h2>Discount codes</h2>
+        <div id="discount-list"></div>
+        <h3 style="font-size:14px;color:var(--gold);margin-top:16px;">New code</h3>
+        <input id="dc-code" placeholder="Code, e.g. WELCOME10" style="width:100%;padding:8px;margin:6px 0;">
+        <select id="dc-type" style="width:100%;padding:8px;margin:6px 0;">
+          <option value="percent">Percent off</option>
+          <option value="fixed">Fixed amount off (pence)</option>
+        </select>
+        <input id="dc-value" type="number" placeholder="Value, e.g. 10 for 10% or 500 for £5" style="width:100%;padding:8px;margin:6px 0;">
+        <input id="dc-campaign" placeholder="Campaign name (optional)" style="width:100%;padding:8px;margin:6px 0;">
+        <input id="dc-limit" type="number" placeholder="Usage limit (optional)" style="width:100%;padding:8px;margin:6px 0;">
+        <button onclick="createDiscountCode()">Create code</button>
+      </div>
     </div>
   </div>
 

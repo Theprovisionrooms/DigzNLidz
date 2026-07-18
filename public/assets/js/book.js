@@ -12,6 +12,7 @@ document.getElementById("booking-form").addEventListener("submit", async (e) => 
     bookingDate: document.getElementById("bookingDate").value,
     slotTime: document.getElementById("slotTime").value,
     notes: document.getElementById("notes").value,
+    discountCode: document.getElementById("discountCode").value || null,
   };
 
   const submitBtn = e.target.querySelector("button[type=submit]");
