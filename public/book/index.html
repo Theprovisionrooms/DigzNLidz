@@ -3,50 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book | Digz N' Lidz</title>
+  <title>Book Your Session | Digz N' Lidz</title>
+  <meta name="description" content="Book a family or group session at Digz N' Lidz RC Experience Cafe. Instant confirmation with a deposit.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/base.css">
 </head>
 <body>
+  <img class="digger-float d1" src="/assets/img/diggers/digger-2.webp" alt="">
+  <img class="digger-float d2" src="/assets/img/diggers/digger-3.webp" alt="">
+
+  <div class="site-topbar">
+    <a href="/"><img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz"></a>
+    <a href="/" class="back">&larr; Home</a>
+  </div>
+
   <div class="wrap">
-    <h1>Book a session</h1>
+    <span class="page-eyebrow">Family & Group</span>
+    <h1>Book your session</h1>
+    <p style="color:var(--bone);opacity:0.8;margin-top:-8px;">Pick a date and time, pay a small deposit, you're booked in. Confirmation lands in your inbox straight away.</p>
+
     <div class="card">
       <form id="booking-form">
-        <label>Booking type</label>
-        <select id="type" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Booking type</span>
+        <select id="type" class="field">
           <option value="family">Family</option>
           <option value="group">Group</option>
         </select>
 
-        <label>Name</label>
-        <input id="name" required style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Name</span>
+        <input id="name" required class="field">
 
-        <label>Email</label>
-        <input id="email" type="email" required style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Email</span>
+        <input id="email" type="email" required class="field">
 
-        <label>Phone</label>
-        <input id="phone" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Phone</span>
+        <input id="phone" class="field">
 
-        <label>Party size</label>
-        <input id="partySize" type="number" min="1" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Party size</span>
+        <input id="partySize" type="number" min="1" class="field">
 
-        <label>Date</label>
-        <input id="bookingDate" type="date" required style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Date</span>
+        <input id="bookingDate" type="date" required class="field">
 
-        <label>Time slot</label>
-        <input id="slotTime" type="time" required style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Time slot</span>
+        <input id="slotTime" type="time" required class="field">
 
-        <label>Notes</label>
-        <textarea id="notes" style="width:100%;padding:10px;margin:8px 0;"></textarea>
+        <span class="field-label">Notes</span>
+        <textarea id="notes" class="field"></textarea>
 
-        <label>Discount code (if you have one)</label>
-        <input id="discountCode" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Discount code (if you have one)</span>
+        <input id="discountCode" class="field">
 
-        <button type="submit">Continue to deposit</button>
+        <button type="submit" style="margin-top:20px;">Continue to deposit</button>
       </form>
       <div id="error" class="error"></div>
     </div>
-    <p><small>Corporate or private event? <a href="/corporate/" style="color:var(--yellow);">Enquire here instead</a>.</small></p>
+
+    <p style="text-align:center;"><small style="color:var(--bone);opacity:0.7;">Planning something bigger? <a href="/corporate/" style="color:var(--yellow);">Corporate & private events go here instead</a>.</small></p>
   </div>
+
+  <footer class="site-footer">Digz N' Lidz RC Experience Cafe</footer>
 
   <script src="/assets/js/book.js"></script>
 </body>

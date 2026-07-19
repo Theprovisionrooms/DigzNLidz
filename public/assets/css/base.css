@@ -186,3 +186,80 @@ button.secondary {
 @media (max-width: 600px) {
   .digger-float { display: none; } /* keep small screens uncluttered */
 }
+
+/* Shared styled form fields, used on book/corporate/contact so those pages
+   can match the brand pass without inline styles everywhere. */
+.field-label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--yellow);
+  margin: 14px 0 6px;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+}
+
+.field {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--site-black);
+  border: 1px solid #3a3530;
+  border-radius: 4px;
+  color: var(--bone);
+  font-family: "Barlow", "Arial Narrow", sans-serif;
+  font-size: 15px;
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--yellow);
+}
+
+textarea.field {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* Lightweight page header/footer, reused on front-of-house pages that
+   aren't the homepage (book, corporate, contact, faq, blog, podcast). */
+.site-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 22px 20px 0;
+}
+
+.site-topbar img { height: 34px; }
+
+.site-topbar a.back {
+  color: var(--bone);
+  opacity: 0.7;
+  text-decoration: none;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.site-topbar a.back:hover { opacity: 1; }
+
+.page-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rust);
+  background: rgba(179, 83, 44, 0.12);
+  border: 1px solid rgba(179, 83, 44, 0.35);
+  padding: 4px 10px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+}
+
+.site-footer {
+  text-align: center;
+  padding: 30px 0;
+  color: #8a8f94;
+  font-size: 12px;
+}

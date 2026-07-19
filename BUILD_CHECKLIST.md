@@ -50,20 +50,21 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [ ] Real menu and pricing from Digz N' Lidz, currently placeholder items (squash/crisps/hot dog) in seat.js
 - [x] Order endpoint, tagged to seat + session, charged via Square sourceId
 - [x] Order UI on seat page
-- [ ] Order sent to staff (screen or email/print, TBC)
+- [x] Order sent to staff, dashboard has a live orders panel (placed/preparing/delivered)
 
 ## Payments (Square)
 - [x] Square API client (payment links, direct charge, webhook verification)
 - [x] Deposit flow (bookings + corporate) via payment links
 - [x] Extension + food/drink charges via Square Web Payments SDK sourceId
-- [ ] Square sandbox credentials added to test end to end
+- [x] Card on file, saves after first payment of a visit, charges direct after that
+- [ ] Square sandbox credentials added to test end to end, still the main blocker
 - [ ] Food/drink catalogue synced from Square (or confirmed as manual entry)
 
 ## Promotions & mailing list
 - [x] Signup capture endpoint
 - [x] Booking confirmation auto-adds to mailing list
-- [ ] Resend templates styled to brand
-- [ ] Cron-triggered automated campaigns (e.g. win-back), codes can be created manually for now, auto-send not built yet
+- [x] Resend templates styled to brand (functions/lib/email.js, brandedEmail wrapper, used on booking confirmation, corporate deposit link, corporate deposit confirmation)
+- [x] Cron-triggered automated campaigns, workers/winback-cron.js, weekly, finds lapsed subscribers, generates a 10% code, emails it, tracks who's been sent to so it doesn't repeat. Deploys separately, see workers/wrangler-winback.toml
 - [x] Discount code redemption logic wired into booking checkout
 - [x] Dashboard: create discount codes, view redemption counts
 
@@ -74,17 +75,17 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Blog, /blog/, JSON-driven (public/blog/posts.json), add posts by editing that file
 - [x] Podcast page, /podcast/, placeholder Spotify/Apple embeds, needs real show links
 - [x] FAQ, /faq/ (with FAQPage schema for SEO/AI discoverability)
-- [ ] Contact
+- [x] Contact, /contact/, general enquiries, emails the venue via Resend
 
 ## Design & animation
 - [x] Real logo and brand colours in use (black/yellow/rust, from actual logo, not a generic placeholder)
 - [x] Digger artwork sourced from Jordan (3 transparent PNGs, optimised to webp, ~100KB each)
 - [x] Floating/drifting digger animation (CSS only, no JS cost), hidden on small screens to avoid clutter
 - [x] Hazard stripe divider component
-- [ ] Custom typography beyond system fallback (Oswald referenced, not yet loaded as a webfont)
 - [ ] Boot/intro animation, micro-interactions, not started
-- [ ] Full pass across every page (currently homepage/blog/podcast updated, seat/book/corporate/dashboard still on older card styling, now using the corrected colour variables at least)
-- [x] Homepage rebuilt: hero, offer pillars, real "how your visit runs" sequence, blog/podcast/FAQ hub teaser, Oswald now actually loading as a webfont (public/index.html, public/assets/css/home.css)
+- [x] Front-of-house pages (book, corporate, contact, faq, blog, podcast) now match the homepage treatment: logo header, styled form fields, hazard-rule footer, real webfonts. Per Jordan's brief, only the seat/QR flow stays deliberately lean, that's intentional, not unfinished
+- [x] Homepage rebuilt: hero, offer pillars, real "how your visit runs" sequence, blog/podcast/FAQ hub teaser, Oswald and Barlow now actually loading as webfonts (public/index.html, public/assets/css/home.css)
+- [x] Dashboard gets a light logo touch (internal tool, kept functional rather than richly styled, on purpose)
 
 ## Dashboard (owner-facing)
 - [x] Password-gated access (/dashboard, shared staff password, signed session cookie)
@@ -93,15 +94,16 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Revenue breakdown (deposits / extensions / food & drink)
 - [x] Mailing list growth (current total, trend over time still to add)
 - [x] Corporate enquiries: confirm + auto-send payment link, right from the dashboard
-- [ ] Promo/campaign performance (waiting on campaigns/discount code build-out)
-- [ ] Site traffic + conversion (needs an analytics source, e.g. Cloudflare Web Analytics)
+- [x] Live orders panel, mark preparing/delivered
+- [ ] Promo/campaign performance (redemption counts exist per code, a proper campaign-level view still to add)
+- [ ] Site traffic + conversion, Cloudflare Web Analytics placeholder added to homepage head, needs Jordan's real token to activate
 
 ## SEO / AI discoverability
-- [ ] LocalBusiness + FAQ schema
-- [ ] Sitemap
-- [ ] Problem/solution copy on key pages
+- [x] LocalBusiness schema (homepage) + FAQPage schema (/faq/)
+- [x] Sitemap
+- [ ] Problem/solution copy on key pages (homepage pillars cover this partially, other pages still generic)
 
 ## Handover
-- [ ] README written
-- [ ] Owner guide written
-- [ ] Legal/IP notice added
+- [x] README written
+- [x] Owner guide written, DigzNLidz_Owner_Guide.docx, delivered separately, not stored in repo
+- [x] Legal/IP notice added, README + homepage footer

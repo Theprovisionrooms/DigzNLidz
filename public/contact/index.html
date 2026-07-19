@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact | Digz N' Lidz</title>
+  <meta name="description" content="Get in touch with Digz N' Lidz RC Experience Cafe.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/base.css">
+</head>
+<body>
+  <img class="digger-float d1" src="/assets/img/diggers/digger-1.webp" alt="">
+
+  <div class="site-topbar">
+    <a href="/"><img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz"></a>
+    <a href="/" class="back">&larr; Home</a>
+  </div>
+
+  <div class="wrap">
+    <span class="page-eyebrow">Get In Touch</span>
+    <h1>Questions, feedback, anything else</h1>
+
+    <div class="card">
+      <p style="color:var(--bone);opacity:0.8;">Send it over and we'll get back to you.</p>
+      <p><small style="color:var(--bone);opacity:0.65;">Booking a session? Use the <a href="/book/" style="color:var(--yellow);">booking page</a> instead. Planning a corporate or private event? There's a dedicated <a href="/corporate/" style="color:var(--yellow);">enquiry page</a> for that.</small></p>
+      <form id="contact-form">
+        <span class="field-label">Name</span>
+        <input id="name" required class="field">
+
+        <span class="field-label">Email</span>
+        <input id="email" type="email" required class="field">
+
+        <span class="field-label">Message</span>
+        <textarea id="message" required rows="5" class="field"></textarea>
+
+        <button type="submit" style="margin-top:20px;">Send</button>
+      </form>
+      <div id="error" class="error"></div>
+      <div id="success" style="color:var(--yellow);margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">Digz N' Lidz RC Experience Cafe</footer>
+
+  <script src="/assets/js/contact.js"></script>
+</body>
+</html>

@@ -4,41 +4,57 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Corporate & Private Events | Digz N' Lidz</title>
+  <meta name="description" content="Take over the RC Experience Cafe for a corporate day, team event, or private party. Get in touch and we'll confirm details before anything's booked.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/base.css">
 </head>
 <body>
+  <img class="digger-float d1" src="/assets/img/diggers/digger-1.webp" alt="">
+  <img class="digger-float d3" src="/assets/img/diggers/digger-3.webp" alt="">
+
+  <div class="site-topbar">
+    <a href="/"><img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz"></a>
+    <a href="/" class="back">&larr; Home</a>
+  </div>
+
   <div class="wrap">
-    <h1>Corporate & private events</h1>
+    <span class="page-eyebrow">Corporate & Private Hire</span>
+    <h1>Take the whole place over</h1>
+    <p style="color:var(--bone);opacity:0.8;margin-top:-8px;">Team days, birthdays, whatever the occasion. Tell us what you need and we'll confirm the details with you directly before anything's booked or charged.</p>
+
     <div class="card">
-      <p>Tell us about your event. We will get in touch to confirm details before any payment is taken.</p>
       <form id="enquiry-form">
-        <label>Company (if applicable)</label>
-        <input id="companyName" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Company (if applicable)</span>
+        <input id="companyName" class="field">
 
-        <label>Contact name</label>
-        <input id="contactName" required style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Contact name</span>
+        <input id="contactName" required class="field">
 
-        <label>Email</label>
-        <input id="email" type="email" required style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Email</span>
+        <input id="email" type="email" required class="field">
 
-        <label>Phone</label>
-        <input id="phone" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Phone</span>
+        <input id="phone" class="field">
 
-        <label>Preferred date</label>
-        <input id="eventDate" type="date" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Preferred date</span>
+        <input id="eventDate" type="date" class="field">
 
-        <label>Headcount</label>
-        <input id="headcount" type="number" min="1" style="width:100%;padding:10px;margin:8px 0;">
+        <span class="field-label">Headcount</span>
+        <input id="headcount" type="number" min="1" class="field">
 
-        <label>Event details</label>
-        <textarea id="eventDetails" style="width:100%;padding:10px;margin:8px 0;"></textarea>
+        <span class="field-label">Event details</span>
+        <textarea id="eventDetails" class="field"></textarea>
 
-        <button type="submit">Send enquiry</button>
+        <button type="submit" style="margin-top:20px;">Send enquiry</button>
       </form>
       <div id="error" class="error"></div>
       <div id="success" style="color:var(--yellow);margin-top:10px;"></div>
     </div>
   </div>
+
+  <footer class="site-footer">Digz N' Lidz RC Experience Cafe</footer>
 
   <script src="/assets/js/corporate.js"></script>
 </body>
