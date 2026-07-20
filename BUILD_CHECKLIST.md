@@ -101,7 +101,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 ## SEO / AI discoverability
 - [x] LocalBusiness schema (homepage) + FAQPage schema (/faq/)
 - [x] Sitemap
-- [ ] Problem/solution copy on key pages (homepage pillars cover this partially, other pages still generic)
+- [x] Problem/solution copy on key pages: homepage pillars already covered this, added real intros + stronger meta descriptions to blog, podcast, contact and FAQ, book and corporate already had it
 
 ## Handover
 - [x] README written

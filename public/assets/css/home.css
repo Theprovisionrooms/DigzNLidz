@@ -5,6 +5,7 @@
 :root {
   --dirt: #241b14;
   --steel: #8a8f94;
+  --sand: #c9a06b;
 }
 
 body.home {
@@ -25,17 +26,28 @@ body.home h3 {
   position: relative;
 }
 
-/* Grain/texture: a couple of soft radial washes plus a subtle diagonal
-   grain, standing in for yard/tarmac texture until real photography
-   comes in. Cheap, no image requests. */
+/* Sandpit background: warm sand-toned glows plus a raked crosshatch
+   groove texture, like the pit's just been worked over. Cheap, no image
+   requests. Kept subtle so text on top stays fully readable. */
 .texture-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse 900px 600px at 15% -10%, rgba(240, 169, 30, 0.08), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 100% 30%, rgba(179, 83, 44, 0.10), transparent 55%),
+    radial-gradient(ellipse 1000px 650px at 15% -10%, rgba(240, 169, 30, 0.10), transparent 60%),
+    radial-gradient(ellipse 800px 550px at 100% 25%, rgba(179, 83, 44, 0.12), transparent 55%),
+    radial-gradient(ellipse 900px 500px at 50% 115%, rgba(201, 160, 107, 0.09), transparent 62%),
     var(--site-black);
+}
+
+.texture-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image:
+    repeating-linear-gradient(115deg, rgba(201, 160, 107, 0.6) 0 2px, transparent 2px 36px),
+    repeating-linear-gradient(65deg, rgba(201, 160, 107, 0.35) 0 1px, transparent 1px 46px);
 }
 
 .texture-bg::after {
@@ -258,8 +270,18 @@ body.home h3 {
 .hero-dust-b { left: 67%; width: 11px; height: 11px; animation: dust-puff 2.6s ease-out infinite 0.5s; }
 .hero-dust-c { left: 55%; width: 20px; height: 20px; animation: dust-puff 2.6s ease-out infinite 0.7s; }
 
-@media (max-width: 480px) {
-  .hero-stage { display: none; } /* keep small screens uncluttered, mirrors .digger-float rule */
+/* Phone-first: the hero digger is the signature element, it stays visible
+   right down to small phones rather than getting cut like the ambient
+   background floaters do. Just trimmed down so it sits comfortably under
+   the copy instead of crowding it. */
+@media (max-width: 760px) {
+  .hero-stage { min-height: 220px; }
+  .hero-digger { width: min(260px, 70%); }
+}
+
+@media (max-width: 380px) {
+  .hero-stage { min-height: 180px; }
+  .hero-digger { width: min(210px, 66%); }
 }
 
 /* ---------- Boot sequence, plays once per session on the homepage ---------- */
