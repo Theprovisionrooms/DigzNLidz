@@ -21,11 +21,31 @@
   </script>
 </head>
 <body class="home">
+  <div id="boot" class="boot-overlay">
+    <div class="boot-inner">
+      <img src="/assets/img/branding/logo.webp" alt="" class="boot-logo">
+      <div class="boot-bar"><div class="boot-bar-fill"></div></div>
+      <p class="boot-text">Starting engines&hellip;</p>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var boot = document.getElementById("boot");
+      var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduced || sessionStorage.getItem("dnl-booted")) {
+        boot.remove();
+      } else {
+        sessionStorage.setItem("dnl-booted", "1");
+        setTimeout(function () { boot.remove(); }, 1700);
+      }
+    })();
+  </script>
+
   <div class="texture-bg"></div>
 
-  <img class="digger-float d1" src="/assets/img/diggers/digger-2.webp" alt="">
-  <img class="digger-float d2" src="/assets/img/diggers/digger-3.webp" alt="">
-  <img class="digger-float d3" src="/assets/img/diggers/digger-1.webp" alt="">
+  <div class="digger-float d1"><img src="/assets/img/diggers/digger-2.webp" alt=""><span class="dust"></span></div>
+  <div class="digger-float d2"><img src="/assets/img/diggers/digger-3.webp" alt=""></div>
+  <div class="digger-float d3"><img src="/assets/img/diggers/digger-1.webp" alt=""><span class="dust"></span></div>
 
   <header class="home-wrap home-topbar">
     <img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz RC Experience Cafe">
@@ -38,12 +58,21 @@
   </header>
 
   <section class="home-wrap hero">
-    <span class="eyebrow">RC Experience Cafe</span>
-    <h1>Get stuck<br><span>in.</span></h1>
-    <p>Sixteen seats. A full RC digger sandpit. Food and drink brought straight to you. Built for birthday parties, family days out, and work dos people actually talk about after.</p>
-    <div class="hero-ctas">
-      <a href="/book/"><span class="btn-primary">Book your session</span></a>
-      <a href="/corporate/"><span class="btn-ghost">Corporate & private events</span></a>
+    <div class="hero-copy">
+      <span class="eyebrow">RC Experience Cafe</span>
+      <h1>Get stuck<br><span>in.</span></h1>
+      <p>Sixteen seats. A full RC digger sandpit. Food and drink brought straight to you. Built for birthday parties, family days out, and work dos people actually talk about after.</p>
+      <div class="hero-ctas">
+        <a href="/book/"><span class="btn-primary">Book your session</span></a>
+        <a href="/corporate/"><span class="btn-ghost">Corporate & private events</span></a>
+      </div>
+    </div>
+    <div class="hero-stage">
+      <div class="hero-ground"></div>
+      <img class="hero-digger" src="/assets/img/diggers/digger-3.webp" alt="RC digger mid-dig in the sandpit" width="420" height="420">
+      <span class="dust hero-dust hero-dust-a"></span>
+      <span class="dust hero-dust hero-dust-b"></span>
+      <span class="dust hero-dust hero-dust-c"></span>
     </div>
   </section>
 

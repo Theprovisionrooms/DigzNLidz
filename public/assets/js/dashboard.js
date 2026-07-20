@@ -42,6 +42,42 @@ async function loadDashboard() {
   const data = await res.json();
   render(data);
   loadDiscountCodes();
+  loadOrders();
+}
+
+async function loadOrders() {
+  const res = await fetch("/api/dashboard/orders");
+  if (!res.ok) return;
+  const data = await res.json();
+  const list = document.getElementById("orders-list");
+
+  if (data.orders.length === 0) {
+    list.innerHTML = `<p><small>No active orders.</small></p>`;
+    return;
+  }
+
+  list.innerHTML = data.orders.map((o) => `
+    <div class="card" style="background:#141414;">
+      <strong>Seat ${o.seat_id}</strong> · ${pence(o.total_pence)} · <small>${o.status}</small>
+      <p style="font-size:13px;">${o.items.map((i) => `${i.quantity || 1}x ${i.name}`).join(", ")}</p>
+      ${o.status === "placed" ? `<button onclick="updateOrder(${o.id}, 'preparing')">Mark preparing</button>` : ""}
+      ${o.status === "preparing" ? `<button onclick="updateOrder(${o.id}, 'delivered')">Mark delivered</button>` : ""}
+    </div>
+  `).join("");
+}
+
+async function updateOrder(id, status) {
+  const res = await fetch("/api/dashboard/orders", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, status }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    alert(err.error || "Something went wrong");
+    return;
+  }
+  loadOrders();
 }
 
 async function loadDiscountCodes() {
@@ -115,6 +151,26 @@ function render(data) {
     : `<div class="stat-row"><span>No bookings today yet</span></div>`;
 
   document.getElementById("mailing-count").textContent = data.mailingListCount;
+  document.getElementById("mailing-trend").innerHTML = data.mailingListTrend.length
+    ? `<table><tr><th>Week</th><th>New signups</th></tr>${data.mailingListTrend.map((w) => `
+        <tr><td>${w.week}</td><td>${w.n}</td></tr>
+      `).join("")}</table>`
+    : `<p><small>No signups yet.</small></p>`;
+
+  const campaignList = document.getElementById("campaign-list");
+  campaignList.innerHTML = data.campaignPerformance.length
+    ? `<table>
+        <tr><th>Campaign</th><th>Type</th><th>Codes</th><th>Redemptions</th></tr>
+        ${data.campaignPerformance.map((c) => `
+          <tr>
+            <td>${c.name}</td>
+            <td>${c.type || "-"}</td>
+            <td>${c.codeCount}</td>
+            <td>${c.redemptions}</td>
+          </tr>
+        `).join("")}
+      </table>`
+    : `<p><small>No campaigns yet.</small></p>`;
 
   const corpList = document.getElementById("corporate-list");
   if (data.pendingCorporateEnquiries.length === 0) {

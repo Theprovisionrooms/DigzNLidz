@@ -44,7 +44,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Public config endpoint (/api/config) for Square app/location IDs and tier pricing
 - [x] Card on file: first payment of a visit saves the card, extend and food orders after that charge it directly, no re-entered card details (migrations/0002_card_on_file.sql, functions/lib/square.js, seats/[id]/start.js, extend.js, order.js)
 - [x] End-of-visit endpoint (POST /api/seats/:id/end): frees the seat, disables the card on file. Also fixes a gap where a seat never went back to "free" after the customer finished, "no I'm done" and the new "I'm finished" button both call it now
-- [ ] Live seat state sync to dashboard (build once dashboard exists)
+- [x] Live seat state sync to dashboard, seat grid pulls from /api/dashboard/summary and polls every 10s
 
 ## Food & drink ordering
 - [ ] Real menu and pricing from Digz N' Lidz, currently placeholder items (squash/crisps/hot dog) in seat.js
@@ -82,7 +82,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Digger artwork sourced from Jordan (3 transparent PNGs, optimised to webp, ~100KB each)
 - [x] Floating/drifting digger animation (CSS only, no JS cost), hidden on small screens to avoid clutter
 - [x] Hazard stripe divider component
-- [ ] Boot/intro animation, micro-interactions, not started
+- [x] Boot/intro animation, micro-interactions: session-scoped boot sequence on load, signature hero digger with dig animation and dust, patrol animation + dust on background diggers (homepage only, other pages keep the original gentle drift), CTA idle pulse + hover lift
 - [x] Front-of-house pages (book, corporate, contact, faq, blog, podcast) now match the homepage treatment: logo header, styled form fields, hazard-rule footer, real webfonts. Per Jordan's brief, only the seat/QR flow stays deliberately lean, that's intentional, not unfinished
 - [x] Homepage rebuilt: hero, offer pillars, real "how your visit runs" sequence, blog/podcast/FAQ hub teaser, Oswald and Barlow now actually loading as webfonts (public/index.html, public/assets/css/home.css)
 - [x] Dashboard gets a light logo touch (internal tool, kept functional rather than richly styled, on purpose)
@@ -92,10 +92,10 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Live seat status view (colour-coded grid)
 - [x] Bookings overview (today by type, this week total)
 - [x] Revenue breakdown (deposits / extensions / food & drink)
-- [x] Mailing list growth (current total, trend over time still to add)
+- [x] Mailing list growth (current total, trend over time), weekly signup counts, last 8 weeks
 - [x] Corporate enquiries: confirm + auto-send payment link, right from the dashboard
-- [x] Live orders panel, mark preparing/delivered
-- [ ] Promo/campaign performance (redemption counts exist per code, a proper campaign-level view still to add)
+- [x] Live orders panel, mark preparing/delivered (functions/api/dashboard/orders.js, was previously marked done but the panel was never actually wired up, fixed now)
+- [x] Promo/campaign performance, redemptions rolled up per campaign not just per code
 - [ ] Site traffic + conversion, Cloudflare Web Analytics placeholder added to homepage head, needs Jordan's real token to activate
 
 ## SEO / AI discoverability

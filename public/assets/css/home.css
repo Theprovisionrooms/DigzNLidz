@@ -82,10 +82,18 @@ body.home h3 {
 
 /* ---------- Hero ---------- */
 .hero {
-  padding: 56px 0 20px;
-  text-align: center;
+  padding: 56px 0 30px;
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  text-align: left;
+  flex-wrap: wrap;
+}
+
+.hero-copy {
+  flex: 1 1 420px;
 }
 
 .eyebrow {
@@ -104,7 +112,7 @@ body.home h3 {
 }
 
 .hero h1 {
-  font-size: clamp(38px, 8vw, 72px);
+  font-size: clamp(38px, 6vw, 76px);
   line-height: 0.98;
   text-transform: uppercase;
   letter-spacing: 0.01em;
@@ -117,9 +125,9 @@ body.home h3 {
   -webkit-text-stroke: 1px var(--rust);
 }
 
-.hero p {
-  max-width: 520px;
-  margin: 0 auto 28px;
+.hero-copy p {
+  max-width: 480px;
+  margin: 0 0 28px;
   font-size: 17px;
   line-height: 1.55;
   color: var(--bone);
@@ -129,13 +137,17 @@ body.home h3 {
 .hero-ctas {
   display: flex;
   gap: 14px;
-  justify-content: center;
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
 
 .hero-ctas a {
   text-decoration: none;
+}
+
+.btn-primary,
+.btn-ghost {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-primary {
@@ -150,6 +162,13 @@ body.home h3 {
   font-size: 15px;
   border-radius: 4px;
   border: none;
+  animation: cta-idle 3s ease-in-out infinite;
+}
+
+.btn-primary:hover {
+  animation-play-state: paused;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(240, 169, 30, 0.3);
 }
 
 .btn-ghost {
@@ -164,6 +183,157 @@ body.home h3 {
   font-size: 15px;
   border-radius: 4px;
   border: 1px solid rgba(239, 230, 216, 0.35);
+}
+
+.btn-ghost:hover {
+  transform: translateY(-2px);
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+@keyframes cta-idle {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(240, 169, 30, 0.35); }
+  50% { box-shadow: 0 0 0 9px rgba(240, 169, 30, 0); }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    text-align: center;
+    justify-content: center;
+    padding: 40px 0 20px;
+  }
+  .hero-copy p { margin-left: auto; margin-right: auto; }
+  .hero-ctas { justify-content: center; }
+}
+
+/* ---------- Hero stage: the signature digger, front and centre ---------- */
+.hero-stage {
+  flex: 1 1 320px;
+  position: relative;
+  min-height: 300px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.hero-ground {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 22px;
+  height: 10px;
+  border-radius: 2px;
+  opacity: 0.55;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--yellow), var(--yellow) 10px,
+    var(--hazard-dark) 10px, var(--hazard-dark) 20px
+  );
+}
+
+.hero-digger {
+  position: relative;
+  z-index: 1;
+  width: min(380px, 82%);
+  height: auto;
+  filter: drop-shadow(0 20px 22px rgba(0, 0, 0, 0.55));
+  transform-origin: 76% 84%;
+  animation: hero-dig 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes hero-dig {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  32% { transform: rotate(-5deg) translateY(-8px); }
+  50% { transform: rotate(4deg) translateY(5px); }
+  62% { transform: rotate(0.5deg) translateY(0); }
+}
+
+.hero-dust {
+  position: absolute;
+  bottom: 30px;
+  z-index: 0;
+}
+
+.hero-dust-a { left: 60%; width: 16px; height: 16px; animation: dust-puff 2.6s ease-out infinite 0.25s; }
+.hero-dust-b { left: 67%; width: 11px; height: 11px; animation: dust-puff 2.6s ease-out infinite 0.5s; }
+.hero-dust-c { left: 55%; width: 20px; height: 20px; animation: dust-puff 2.6s ease-out infinite 0.7s; }
+
+@media (max-width: 480px) {
+  .hero-stage { display: none; } /* keep small screens uncluttered, mirrors .digger-float rule */
+}
+
+/* ---------- Boot sequence, plays once per session on the homepage ---------- */
+.boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--site-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: boot-wipe 1.7s ease forwards;
+}
+
+.boot-inner {
+  text-align: center;
+}
+
+.boot-logo {
+  height: 56px;
+  opacity: 0;
+  animation: boot-logo-in 0.5s ease 0.15s forwards;
+}
+
+.boot-bar {
+  width: 220px;
+  height: 6px;
+  margin: 22px auto 0;
+  background: #2a2621;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.boot-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--yellow), var(--yellow) 10px,
+    var(--hazard-dark) 10px, var(--hazard-dark) 20px
+  );
+  animation: boot-fill 1s ease 0.3s forwards;
+}
+
+.boot-text {
+  margin: 14px 0 0;
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--yellow);
+  opacity: 0;
+  animation: boot-text-in 0.4s ease 0.3s forwards;
+}
+
+@keyframes boot-logo-in {
+  from { opacity: 0; transform: scale(0.7); }
+  60% { opacity: 1; transform: scale(1.08); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes boot-text-in {
+  from { opacity: 0; }
+  to { opacity: 0.85; }
+}
+
+@keyframes boot-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes boot-wipe {
+  0%, 76% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
 /* ---------- Hazard divider (reuses base.css .hazard-divider look but
@@ -376,10 +546,84 @@ body.home h3 {
   transform: translateY(0);
 }
 
+/* ---------- Background diggers, homepage only. Elsewhere on the site they
+   stay as the original gentle drift (base.css); here they get a proper
+   patrol with a bit of dust, since this is the page that has to sell it. ---------- */
+body.home .digger-float {
+  filter: none;
+  opacity: 0.26;
+}
+
+body.home .digger-float img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+body.home .digger-float.d1 { animation: patrol-1 15s ease-in-out infinite; }
+body.home .digger-float.d2 { animation: patrol-2 18s ease-in-out infinite; }
+body.home .digger-float.d3 { animation: patrol-3 13s ease-in-out infinite; }
+
+@keyframes patrol-1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-38px, -10px) rotate(-3deg); }
+  40% { transform: translate(-68px, 6px) rotate(2deg); }
+  60% { transform: translate(-98px, -6px) rotate(-2deg); }
+  80% { transform: translate(-58px, 5px) rotate(1deg); }
+}
+
+@keyframes patrol-2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(48px, -14px) rotate(2deg); }
+  50% { transform: translate(88px, 8px) rotate(-2deg); }
+  75% { transform: translate(38px, -6px) rotate(1deg); }
+}
+
+@keyframes patrol-3 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  30% { transform: translate(28px, -8px) rotate(3deg); }
+  55% { transform: translate(52px, 6px) rotate(-3deg); }
+  80% { transform: translate(18px, -4px) rotate(2deg); }
+}
+
+/* Shared dust-puff look, used by both the background diggers and the
+   hero digger so the effect reads as one consistent bit of ground being
+   kicked up rather than two different animations. */
+.dust {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 169, 30, 0.4), rgba(240, 169, 30, 0) 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.home .digger-float.d1 .dust { left: 8%; bottom: 6%; width: 40px; height: 40px; animation: dust-puff 5s ease-out infinite; }
+body.home .digger-float.d3 .dust { right: 10%; bottom: 8%; width: 40px; height: 40px; animation: dust-puff 4.3s ease-out infinite 0.6s; }
+
+@keyframes dust-puff {
+  0%, 14% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  22% { opacity: 0.7; }
+  55% { opacity: 0; transform: translate(-14px, -34px) scale(1.3); }
+  100% { opacity: 0; }
+}
+
+@media (max-width: 600px) {
+  body.home .digger-float { display: none; } /* keep small screens uncluttered, same rule as base.css */
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  .boot-overlay { display: none; }
+  .hero-digger,
+  .dust,
+  .btn-primary,
+  body.home .digger-float.d1,
+  body.home .digger-float.d2,
+  body.home .digger-float.d3 {
+    animation: none !important;
   }
 }
