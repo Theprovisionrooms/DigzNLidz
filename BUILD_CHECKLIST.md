@@ -10,8 +10,8 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Payment provider decided, Square (matches their existing till)
 - [ ] Square account access confirmed (API keys, sandbox access)
 - [ ] Branding assets received (logo files, photography, digger imagery direction)
-- [ ] Tier names + pricing confirmed (currently Tier 1/2/3, 15/30/60 min)
-- [ ] Corporate booking process signed off
+- [x] Tier names + pricing confirmed: 15 min £5, 30 min £10, 60 min £15 (migrations/0003_tier_pricing.sql)
+- [x] Corporate booking process signed off, Jordan's call, existing enquiry -> confirm -> payment link flow stands as built
 
 ## Data model (D1)
 - [x] bookings (type: family/group/corporate, status, date, slot, deposit_status)
@@ -47,7 +47,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Live seat state sync to dashboard, seat grid pulls from /api/dashboard/summary and polls every 10s
 
 ## Food & drink ordering
-- [ ] Real menu and pricing from Digz N' Lidz, currently placeholder items (squash/crisps/hot dog) in seat.js
+- [x] Menu and pricing now pulled from Square's catalog (functions/api/config.js, functions/lib/square.js), Mark and Danny manage items and prices themselves in Square, no code change needed on their end. Still needs live Square credentials to actually see real items instead of the fallback squash/crisps/hot dog placeholder
 - [x] Order endpoint, tagged to seat + session, charged via Square sourceId
 - [x] Order UI on seat page
 - [x] Order sent to staff, dashboard has a live orders panel (placed/preparing/delivered)
@@ -58,7 +58,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Extension + food/drink charges via Square Web Payments SDK sourceId
 - [x] Card on file, saves after first payment of a visit, charges direct after that
 - [ ] Square sandbox credentials added to test end to end, still the main blocker
-- [ ] Food/drink catalogue synced from Square (or confirmed as manual entry)
+- [x] Food/drink catalogue synced from Square, decided against manual entry so Mark and Danny keep control of their own menu and pricing
 
 ## Promotions & mailing list
 - [x] Signup capture endpoint
@@ -96,7 +96,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Corporate enquiries: confirm + auto-send payment link, right from the dashboard
 - [x] Live orders panel, mark preparing/delivered (functions/api/dashboard/orders.js, was previously marked done but the panel was never actually wired up, fixed now)
 - [x] Promo/campaign performance, redemptions rolled up per campaign not just per code
-- [ ] Site traffic + conversion, Cloudflare Web Analytics placeholder added to homepage head, needs Jordan's real token to activate
+- [x] Site traffic + conversion: no code needed, Cloudflare auto-injects the beacon once Web Analytics is enabled on the Pages project (Metrics tab), there's no snippet to add to the homepage
 
 ## SEO / AI discoverability
 - [x] LocalBusiness schema (homepage) + FAQPage schema (/faq/)

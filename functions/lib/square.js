@@ -28,7 +28,28 @@ async function squareFetch(env, path, options = {}) {
   return data;
 }
 
-// Hosted checkout page, used for deposits (family/group booking) and for
+// Menu items, pulled from Square's catalog so Mark and Danny can manage
+// pricing and items themselves in Square without needing a code change.
+// Only ITEM type, one price per item (their snack menu isn't the kind of
+// thing that needs variations like size or colour).
+export async function listMenuItems(env) {
+  const data = await squareFetch(env, "/v2/catalog/list?types=ITEM", { method: "GET" });
+  const objects = data.objects || [];
+
+  return objects
+    .map((obj) => {
+      const variation = obj.item_data?.variations?.[0]?.item_variation_data;
+      if (!variation?.price_money?.amount) return null;
+      return {
+        id: obj.id,
+        name: obj.item_data.name,
+        pricePence: variation.price_money.amount,
+      };
+    })
+    .filter(Boolean);
+}
+
+
 // corporate payment links sent once staff confirm an enquiry.
 export async function createPaymentLink(env, { amountPence, reference, description, redirectUrl }) {
   const data = await squareFetch(env, "/v2/online-checkout/payment-links", {

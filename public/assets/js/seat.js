@@ -255,17 +255,13 @@ async function collectCardAndSubmit(onToken, amountPence) {
 }
 
 // --- Food & drink ordering ---
-// Menu is placeholder until Digz N' Lidz confirm items and pricing.
-const MENU = [
-  { id: "squash", name: "Squash", pricePence: 150 },
-  { id: "crisps", name: "Crisps", pricePence: 150 },
-  { id: "hotdog", name: "Hot Dog", pricePence: 400 },
-];
-
+// Menu comes from config.menu, populated server-side from Square's catalog
+// (see functions/api/config.js), so Mark and Danny manage items and
+// pricing themselves in Square without needing a code change.
 const cart = {};
 
 function renderMenu() {
-  const rows = MENU.map((item) => `
+  const rows = config.menu.map((item) => `
     <div class="item-row">
       <div>${item.name} · £${(item.pricePence / 100).toFixed(2)}</div>
       <div class="qty-controls">
@@ -298,7 +294,7 @@ function bindMenuHandlers() {
   });
 
   document.getElementById("order-submit").addEventListener("click", async () => {
-    const items = MENU.filter((m) => cart[m.id] > 0).map((m) => ({
+    const items = config.menu.filter((m) => cart[m.id] > 0).map((m) => ({
       name: m.name, quantity: cart[m.id], pricePence: m.pricePence,
     }));
     const errorEl = document.getElementById("order-error");
