@@ -58,7 +58,7 @@ async function loadOrders() {
 
   list.innerHTML = data.orders.map((o) => `
     <div class="card" style="background:#141414;">
-      <strong>Seat ${o.seat_id}</strong> · ${pence(o.total_pence)} · <small>${o.status}</small>
+      <strong>${o.table_id ? `Table ${o.table_id}` : `Seat ${o.seat_id}`}</strong> · ${pence(o.total_pence)} · <small>${o.status}</small>
       <p style="font-size:13px;">${o.items.map((i) => `${i.quantity || 1}x ${i.name}`).join(", ")}</p>
       ${o.status === "placed" ? `<button onclick="updateOrder(${o.id}, 'preparing')">Mark preparing</button>` : ""}
       ${o.status === "preparing" ? `<button onclick="updateOrder(${o.id}, 'delivered')">Mark delivered</button>` : ""}

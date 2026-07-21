@@ -11,7 +11,7 @@ export async function onRequestGet({ request, env }) {
   if (!(await isAuthenticated(request, env))) return unauthorizedResponse();
 
   const { results } = await env.DB.prepare(
-    `SELECT id, seat_id, items_json, total_pence, status, created_at
+    `SELECT id, seat_id, table_id, items_json, total_pence, status, created_at
      FROM orders
      WHERE status != 'delivered'
      ORDER BY created_at ASC`

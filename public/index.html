@@ -66,6 +66,7 @@
         <a href="/book/"><span class="btn-primary">Book your session</span></a>
         <a href="/corporate/"><span class="btn-ghost">Corporate & private events</span></a>
       </div>
+      <p class="hero-price-hook">Sessions from £5 &middot; sixteen seats, first come first held</p>
     </div>
     <div class="hero-stage">
       <div class="hero-ground"></div>
@@ -82,14 +83,19 @@
     <div class="home-wrap">
       <div class="section-head reveal">
         <span class="eyebrow">What's here</span>
-        <h2>One site, three ways in</h2>
-        <p>Turn up for a session, order without leaving your seat, or take the whole place over for the day.</p>
+        <h2>One site, four ways in</h2>
+        <p>Turn up for a session, order without leaving your seat, grab a table without going near the sandpit, or take the whole place over for the day.</p>
       </div>
       <div class="pillars">
         <div class="pillar reveal">
           <h3>RC Sandpit Sessions</h3>
           <p>Real diggers, real controls, sixteen seats on the floor. Pick a slot, and the time's yours to dig.</p>
           <a href="/book/">Book a seat &rarr;</a>
+        </div>
+        <div class="pillar reveal">
+          <h3>Just Here For Food & Drink</h3>
+          <p>Eight cafe tables away from the pit, if you're not digging. Scan, order, no queue at a counter.</p>
+          <a href="/faq/">How it works &rarr;</a>
         </div>
         <div class="pillar reveal">
           <h3>Food & Drink, To Your Seat</h3>
@@ -118,8 +124,8 @@
           <p>Reserve online, or turn up and get seated on the day.</p>
         </div>
         <div class="step reveal">
-          <h4>Scan at your seat</h4>
-          <p>One scan starts your session. No sign up, no app.</p>
+          <h4>Scan at your seat or table</h4>
+          <p>One scan starts your session, or opens the menu if you're just after food and drink. No sign up, no app.</p>
         </div>
         <div class="step reveal">
           <h4>Order if you fancy it</h4>
@@ -156,6 +162,11 @@
     <p>Digz N' Lidz RC Experience Cafe</p>
   </footer>
 
+  <a href="/book/" class="mobile-book-bar" id="mobile-book-bar">
+    <span>Sessions from £5</span>
+    <span class="mobile-book-bar-btn">Book now &rarr;</span>
+  </a>
+
   <script>
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const io = new IntersectionObserver((entries) => {
@@ -169,6 +180,20 @@
       document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
     } else {
       document.querySelectorAll(".reveal").forEach((el) => el.classList.add("is-visible"));
+    }
+
+    // Mobile sticky book bar: shows once the hero's own CTA has scrolled
+    // out of view, so there's always a way to book without hunting back
+    // up the page, but it doesn't just duplicate the hero button on load.
+    const heroCtas = document.querySelector(".hero-ctas");
+    const bookBar = document.getElementById("mobile-book-bar");
+    if (heroCtas && bookBar) {
+      const barObserver = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          bookBar.classList.toggle("is-visible", !e.isIntersecting);
+        });
+      }, { threshold: 0 });
+      barObserver.observe(heroCtas);
     }
   </script>
 </body>

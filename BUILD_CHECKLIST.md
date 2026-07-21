@@ -51,6 +51,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Order endpoint, tagged to seat + session, charged via Square sourceId
 - [x] Order UI on seat page
 - [x] Order sent to staff, dashboard has a live orders panel (placed/preparing/delivered)
+- [x] Cafe tables (8, away from the pit): QR ordering with no digger session attached, /table/?table=N, functions/api/tables/[id]/order.js, migrations/0004_cafe_tables.sql adds table_id to orders. Every order is a fresh one-off card charge since there's no session to keep a card on file against. Dashboard orders panel labels these "Table N" instead of "Seat N" so staff know where to deliver
 
 ## Payments (Square)
 - [x] Square API client (payment links, direct charge, webhook verification)
@@ -86,6 +87,9 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Front-of-house pages (book, corporate, contact, faq, blog, podcast) now match the homepage treatment: logo header, styled form fields, hazard-rule footer, real webfonts. Per Jordan's brief, only the seat/QR flow stays deliberately lean, that's intentional, not unfinished
 - [x] Homepage rebuilt: hero, offer pillars, real "how your visit runs" sequence, blog/podcast/FAQ hub teaser, Oswald and Barlow now actually loading as webfonts (public/index.html, public/assets/css/home.css)
 - [x] Dashboard gets a light logo touch (internal tool, kept functional rather than richly styled, on purpose)
+- [x] Sandpit background: texture-bg reworked with warm sand-toned glows plus a raked crosshatch groove texture, subtle, doesn't hurt readability
+- [x] Hero digger now shows on all screen sizes including phones, it was previously hidden below 480px which is what caused it to be missing on Jordan's iPhone. Sized down progressively rather than hidden, phone experience prioritised over desktop per Jordan's steer
+- [x] Mobile hero was flat, added a price/urgency hook line under the hero CTAs plus a sticky mobile-only "Book now" bar that appears once the hero scrolls out of view, so there's always a live path to booking
 
 ## Dashboard (owner-facing)
 - [x] Password-gated access (/dashboard, shared staff password, signed session cookie)
