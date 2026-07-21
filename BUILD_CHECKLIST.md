@@ -33,6 +33,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Booking form UI (public site), /book/
 - [x] Corporate enquiry UI, /corporate/
 - [x] Corporate staff confirm UI, lives in the dashboard (/dashboard)
+- [x] Seat assignment for group bookings: decided against automatic seat holds, soft block instead. Bookings only ever stored party_size as a headcount, no seat numbers, walk-ins were always fully independent of bookings (starting a seat session never checks the bookings table). Dashboard now has an unmissable "Hold seats today" panel at the very top, above live seats, listing today's bookings by slot time with seats needed, flags anything starting within the hour
 
 ## QR seat sessions
 - [x] Generate 16 unique seat QR codes, public/assets/qr/seat-1.png to seat-16.png

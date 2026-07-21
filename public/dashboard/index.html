@@ -20,6 +20,29 @@
     .stat-row:last-child { border-bottom: none; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     td, th { text-align: left; padding: 6px 4px; border-bottom: 1px solid #2c2c2c; }
+    .hold-panel {
+      border: 2px solid var(--yellow);
+      background: repeating-linear-gradient(135deg, #1a1a1a, #1a1a1a 14px, #201a10 14px, #201a10 28px);
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .hold-panel h2 {
+      color: var(--yellow);
+      margin: 0 0 4px;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .hold-panel p.sub { margin: 0 0 12px; font-size: 12px; color: var(--bone); opacity: 0.75; }
+    .hold-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 10px; border-radius: 3px; margin-bottom: 6px;
+      background: rgba(0,0,0,0.35);
+    }
+    .hold-row.urgent { background: var(--rust); }
+    .hold-row .seats-needed { font-weight: bold; color: var(--yellow); }
+    .hold-row.urgent .seats-needed { color: var(--bone); }
   </style>
 </head>
 <body>
@@ -35,6 +58,12 @@
     </div>
 
     <div id="dashboard-view" style="display:none;">
+      <div class="hold-panel">
+        <h2>&#9888; Hold seats today</h2>
+        <p class="sub">No automatic seat blocking, this is on staff. Keep this many seats free ahead of each slot.</p>
+        <div id="hold-list"></div>
+      </div>
+
       <div class="card">
         <h2>Live seats</h2>
         <div class="grid" id="seat-grid"></div>

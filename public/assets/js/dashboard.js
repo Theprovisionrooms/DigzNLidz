@@ -135,6 +135,40 @@ async function createDiscountCode() {
   loadDiscountCodes();
 }
 
+// Staff-facing nudge: no automatic seat blocking exists (soft block, by
+// design, see BUILD_CHECKLIST), so this has to do the job of making sure
+// nobody misses that a family or group needs seats held for them.
+function renderHoldPanel(bookings) {
+  const list = document.getElementById("hold-list");
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const upcoming = bookings
+    .map((b) => {
+      const [h, m] = b.slot_time.split(":").map(Number);
+      return { ...b, slotMinutes: h * 60 + m };
+    })
+    // Keep anything not more than 30 minutes past its slot, in case
+    // they're running a little late, drop it once it's clearly over.
+    .filter((b) => b.slotMinutes >= nowMinutes - 30)
+    .sort((a, b) => a.slotMinutes - b.slotMinutes);
+
+  if (upcoming.length === 0) {
+    list.innerHTML = `<p style="font-size:13px;opacity:0.7;margin:0;">Nothing left to hold for today.</p>`;
+    return;
+  }
+
+  list.innerHTML = upcoming.map((b) => {
+    const urgent = b.slotMinutes - nowMinutes <= 60;
+    return `
+      <div class="hold-row ${urgent ? "urgent" : ""}">
+        <span>${b.slot_time} &middot; ${b.name} (${b.type})</span>
+        <span class="seats-needed">${b.party_size || "?"} seats</span>
+      </div>
+    `;
+  }).join("");
+}
+
 function render(data) {
   const grid = document.getElementById("seat-grid");
   grid.innerHTML = data.seats.map((s) => `
@@ -149,6 +183,8 @@ function render(data) {
   document.getElementById("bookings-today-breakdown").innerHTML = data.bookingsToday.length
     ? data.bookingsToday.map((b) => `<div class="stat-row"><span>${b.type} today</span><span>${b.n}</span></div>`).join("")
     : `<div class="stat-row"><span>No bookings today yet</span></div>`;
+
+  renderHoldPanel(data.bookingsTodayDetail);
 
   document.getElementById("mailing-count").textContent = data.mailingListCount;
   document.getElementById("mailing-trend").innerHTML = data.mailingListTrend.length

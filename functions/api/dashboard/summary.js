@@ -14,6 +14,7 @@ export async function onRequestGet({ request, env }) {
 
   const [
     bookingsToday,
+    bookingsTodayDetail,
     bookingsWeek,
     depositRevenue,
     orderRevenue,
@@ -25,6 +26,12 @@ export async function onRequestGet({ request, env }) {
     campaignPerformance,
   ] = await Promise.all([
     db.prepare(`SELECT COUNT(*) as n, type FROM bookings WHERE booking_date = ? GROUP BY type`).bind(today).all(),
+    // Full detail for today, sorted by slot, so staff know exactly how
+    // many seats to hold free and when, not just a headline count.
+    db.prepare(
+      `SELECT name, type, party_size, slot_time, deposit_status
+       FROM bookings WHERE booking_date = ? ORDER BY slot_time ASC`
+    ).bind(today).all(),
     db.prepare(`SELECT COUNT(*) as n FROM bookings WHERE created_at >= ?`).bind(weekAgo).first(),
     db.prepare(`SELECT COALESCE(SUM(deposit_amount_pence),0) as total FROM bookings WHERE deposit_status = 'paid'`).first(),
     db.prepare(`SELECT COALESCE(SUM(total_pence),0) as total FROM orders`).first(),
@@ -55,6 +62,7 @@ export async function onRequestGet({ request, env }) {
 
   return Response.json({
     bookingsToday: bookingsToday.results,
+    bookingsTodayDetail: bookingsTodayDetail.results,
     bookingsThisWeek: bookingsWeek.n,
     revenue: {
       depositsPence: depositRevenue.total,
