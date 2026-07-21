@@ -12,6 +12,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [ ] Branding assets received (logo files, photography, digger imagery direction)
 - [x] Tier names + pricing confirmed: 15 min £5, 30 min £10, 60 min £15 (migrations/0003_tier_pricing.sql)
 - [x] Corporate booking process signed off, Jordan's call, existing enquiry -> confirm -> payment link flow stands as built
+- [ ] Business hours, not needed yet, Jordan will provide when confirmed (affects: booking slot availability, any "open now" copy, contact page/footer hours if added later)
 
 ## Data model (D1)
 - [x] bookings (type: family/group/corporate, status, date, slot, deposit_status)
@@ -37,6 +38,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 
 ## QR seat sessions
 - [x] Generate 16 unique seat QR codes, public/assets/qr/seat-1.png to seat-16.png
+- [x] Generate 8 cafe table QR codes, public/assets/qr/table-1.png to table-8.png, encode https://digznlidz.co.uk/table/?table=N, same 600x600 style as the seat codes
 - [x] Seat landing page (start session / order food), /seat/?seat=N
 - [x] Seat status endpoint (GET /api/seats/:id)
 - [x] Start session endpoint, handles paid tiers via Square Web Payments SDK sourceId
@@ -112,3 +114,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] README written
 - [x] Owner guide written, DigzNLidz_Owner_Guide.docx, delivered separately, not stored in repo
 - [x] Legal/IP notice added, README + homepage footer
+- [x] Contact page fix: /contact/ existed in the file structure but wasn't linked from anywhere on the live site, homepage nav is the only cross-page nav on the site and it never included it. Added to the homepage nav, that was the actual bug, not a missing page
+- [x] "All systems powered and built by Sidedoor Digital" credit line, links to getsidedoor.co.uk, added under the footer on all 7 content pages (homepage, blog, podcast, faq, contact, corporate, book). Not added to /seat/ or /table/, those stay deliberately lean per the existing brief
+- [x] Social links added to footer on all 7 content pages: Facebook, Instagram, YouTube, TikTok
+- [ ] Privacy Policy: draft built at /privacy/, technically accurate to the real system (Square handles all card data directly, Cloudflare hosts, Resend sends transactional email, Sidedoor Digital built it but isn't the data controller). Linked from every page footer. NOT solicitor-reviewed, has [BRACKETED] placeholders for business legal name/address, retention periods, privacy contact email, and a couple of technical confirms (Cloudflare data region, whether Square's payment form needs its own cookie disclosure). Must not go live as-is

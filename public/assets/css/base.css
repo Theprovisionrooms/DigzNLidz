@@ -263,3 +263,36 @@ textarea.field {
   color: #8a8f94;
   font-size: 12px;
 }
+
+.credit-line {
+  text-align: center;
+  padding: 0 0 24px;
+  color: #6a6f74;
+  font-size: 11px;
+}
+
+.credit-line a {
+  color: #8a8f94;
+  text-decoration: underline;
+}
+
+.credit-line a:hover {
+  color: var(--yellow);
+}
+
+.social-line {
+  text-align: center;
+  padding: 0 0 10px;
+  font-size: 12px;
+}
+
+.social-line a {
+  color: #8a8f94;
+  text-decoration: none;
+  margin: 0 8px;
+  letter-spacing: 0.03em;
+}
+
+.social-line a:hover {
+  color: var(--yellow);
+}
