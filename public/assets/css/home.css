@@ -422,11 +422,13 @@ body.home h3 {
    as a slimmer full-bleed rule between sections) ---------- */
 .hazard-rule {
   height: 6px;
-  background: repeating-linear-gradient(
+  background-image: repeating-linear-gradient(
     135deg,
     var(--yellow), var(--yellow) 10px,
     var(--hazard-dark) 10px, var(--hazard-dark) 20px
   );
+  background-size: 40px 100%;
+  animation: stripe-scroll 2s linear infinite;
   margin: 0;
 }
 
@@ -650,11 +652,25 @@ body.home .digger-float img {
 
 body.home .digger-float.d1 { top: 14%; animation: drive-across 17s linear infinite; }
 body.home .digger-float.d2 { top: 78%; animation: drive-across 21s linear infinite reverse; animation-delay: -6s; }
-body.home .digger-float.d3 { top: 46%; animation: drive-across 14s linear infinite; animation-delay: -4s; }
+body.home .digger-float.d3 { top: 46%; animation: drive-across 20s linear infinite; animation-delay: -4s; }
 
 @keyframes drive-across {
   from { transform: translateX(-30vw); }
   to { transform: translateX(130vw); }
+}
+
+/* Dust kicks up right as each digger reaches the edge of the screen and
+   exits. Matches the parent's own drive-across timing exactly (same
+   duration, direction, delay) so the puff lands in sync regardless of
+   which way that digger is travelling. */
+.edge-dust-1 { bottom: 4px; left: 10%; width: 24px; height: 24px; animation: edge-dust 17s linear infinite; }
+.edge-dust-2 { bottom: 4px; right: 10%; width: 24px; height: 24px; animation: edge-dust 21s linear infinite reverse; animation-delay: -6s; }
+.edge-dust-3 { bottom: 4px; left: 10%; width: 24px; height: 24px; animation: edge-dust 20s linear infinite; animation-delay: -4s; }
+
+@keyframes edge-dust {
+  0%, 86% { opacity: 0; transform: scale(0.4); }
+  92% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.5); }
 }
 
 /* The rig: one truck driving continuously from one end of the site to
@@ -717,6 +733,7 @@ body.home .digger-float.d3 { top: 46%; animation: drive-across 14s linear infini
   .btn-primary,
   .rig-truck,
   .rig-stripe,
+  .hazard-rule,
   body.home .digger-float.d1,
   body.home .digger-float.d2,
   body.home .digger-float.d3 {
