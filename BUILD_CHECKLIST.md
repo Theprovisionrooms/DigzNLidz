@@ -93,7 +93,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Sandpit background: texture-bg reworked with warm sand-toned glows plus a raked crosshatch groove texture, subtle, doesn't hurt readability
 - [x] Hero digger now shows on all screen sizes including phones, it was previously hidden below 480px which is what caused it to be missing on Jordan's iPhone. Sized down progressively rather than hidden, phone experience prioritised over desktop per Jordan's steer
 - [x] Mobile hero was flat, added a price/urgency hook line under the hero CTAs plus a sticky mobile-only "Book now" bar that appears once the hero scrolls out of view, so there's always a live path to booking
-- [x] Background diggers reworked again: were drifting/patrolling aimlessly across a wide arc, now do a tighter in-place scoop-swing-dump loop toward small CSS truck-bed shapes, rotation-driven rather than travel-driven, reads as diggers working rather than diggers wandering, per reference video (RC digger loading a truck)
+- [x] Background diggers, third pass: the scoop-swing-load version didn't land well, simplified to what was actually asked for. Diggers now just drive across the full screen width and exit, on a loop, no dust, no swinging, kept light so it's fun rather than distracting. Added a new "rig" element: one truck driving continuously end to end along a hazard-stripe road that scrolls endlessly underneath it. Visible on all screen sizes now including mobile, since a full crossing doesn't clutter a small screen the way a static corner element would. Static hazard-stripe ground bars removed, sandpit background texture kept
 
 ## Dashboard (owner-facing)
 - [x] Password-gated access (/dashboard, shared staff password, signed session cookie)
