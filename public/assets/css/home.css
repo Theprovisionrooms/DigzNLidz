@@ -641,31 +641,65 @@ body.home .digger-float img {
   height: auto;
 }
 
-body.home .digger-float.d1 { animation: patrol-1 15s ease-in-out infinite; }
-body.home .digger-float.d2 { animation: patrol-2 18s ease-in-out infinite; }
-body.home .digger-float.d3 { animation: patrol-3 13s ease-in-out infinite; }
+body.home .digger-float.d1 { animation: load-1 7s ease-in-out infinite; }
+body.home .digger-float.d2 { animation: load-2 8s ease-in-out infinite; }
+body.home .digger-float.d3 { animation: load-3 6.5s ease-in-out infinite; }
 
-@keyframes patrol-1 {
+/* Each cycle: scoop down into the pile, lift and swing toward the truck,
+   a brief pause at the dump, then swing back. Rotation carries most of
+   the motion rather than travel distance, since these are meant to read
+   as a digger working in one spot, not driving around the page. */
+@keyframes load-1 {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  20% { transform: translate(-38px, -10px) rotate(-3deg); }
-  40% { transform: translate(-68px, 6px) rotate(2deg); }
-  60% { transform: translate(-98px, -6px) rotate(-2deg); }
-  80% { transform: translate(-58px, 5px) rotate(1deg); }
+  18% { transform: translate(-6px, -3px) rotate(-7deg); }
+  38% { transform: translate(-22px, -12px) rotate(5deg); }
+  50% { transform: translate(-26px, -10px) rotate(7deg); }
+  70% { transform: translate(-10px, -4px) rotate(-2deg); }
 }
 
-@keyframes patrol-2 {
+@keyframes load-2 {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(48px, -14px) rotate(2deg); }
-  50% { transform: translate(88px, 8px) rotate(-2deg); }
-  75% { transform: translate(38px, -6px) rotate(1deg); }
+  20% { transform: translate(5px, -4px) rotate(6deg); }
+  40% { transform: translate(20px, -12px) rotate(-5deg); }
+  52% { transform: translate(24px, -9px) rotate(-7deg); }
+  72% { transform: translate(9px, -3px) rotate(2deg); }
 }
 
-@keyframes patrol-3 {
+@keyframes load-3 {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  30% { transform: translate(28px, -8px) rotate(3deg); }
-  55% { transform: translate(52px, 6px) rotate(-3deg); }
-  80% { transform: translate(18px, -4px) rotate(2deg); }
+  18% { transform: translate(-5px, -4px) rotate(-6deg); }
+  40% { transform: translate(-18px, -14px) rotate(6deg); }
+  52% { transform: translate(-22px, -11px) rotate(8deg); }
+  72% { transform: translate(-8px, -4px) rotate(-2deg); }
 }
+
+/* Small truck beds, the load target each digger is working toward.
+   Kept as plain CSS shapes, low opacity, same visual weight as the
+   diggers themselves so they read as part of the same scene. */
+.truck-bed {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  width: 86px;
+  height: 42px;
+  border-radius: 2px 2px 5px 5px;
+  background: linear-gradient(180deg, #2a2620, #17140f);
+  opacity: 0;
+}
+
+.truck-bed::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: repeating-linear-gradient(
+    135deg, var(--yellow), var(--yellow) 8px, var(--hazard-dark) 8px, var(--hazard-dark) 16px
+  );
+}
+
+body.home .truck-1 { top: 11%; right: 200px; opacity: 0.22; }
+body.home .truck-2 { bottom: 9%; left: 180px; opacity: 0.22; }
+body.home .truck-3 { top: 57%; right: 160px; opacity: 0.22; }
 
 /* Shared dust-puff look, used by both the background diggers and the
    hero digger so the effect reads as one consistent bit of ground being
@@ -678,8 +712,9 @@ body.home .digger-float.d3 { animation: patrol-3 13s ease-in-out infinite; }
   pointer-events: none;
 }
 
-body.home .digger-float.d1 .dust { left: 8%; bottom: 6%; width: 40px; height: 40px; animation: dust-puff 5s ease-out infinite; }
-body.home .digger-float.d3 .dust { right: 10%; bottom: 8%; width: 40px; height: 40px; animation: dust-puff 4.3s ease-out infinite 0.6s; }
+body.home .digger-float.d1 .dust { left: 10%; bottom: 10%; width: 34px; height: 34px; animation: dust-puff 7s ease-out infinite 2.6s; }
+body.home .digger-float.d2 .dust { right: 12%; bottom: 14%; width: 34px; height: 34px; animation: dust-puff 8s ease-out infinite 3s; }
+body.home .digger-float.d3 .dust { right: 10%; bottom: 8%; width: 34px; height: 34px; animation: dust-puff 6.5s ease-out infinite 2.4s; }
 
 @keyframes dust-puff {
   0%, 14% { opacity: 0; transform: translate(0, 0) scale(0.4); }
@@ -689,7 +724,8 @@ body.home .digger-float.d3 .dust { right: 10%; bottom: 8%; width: 40px; height: 
 }
 
 @media (max-width: 600px) {
-  body.home .digger-float { display: none; } /* keep small screens uncluttered, same rule as base.css */
+  body.home .digger-float,
+  body.home .truck-bed { display: none; } /* keep small screens uncluttered, same rule as base.css */
 }
 
 @media (prefers-reduced-motion: reduce) {
