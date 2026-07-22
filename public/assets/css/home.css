@@ -654,23 +654,43 @@ body.home .digger-float.d1 { top: 14%; animation: drive-across 17s linear infini
 body.home .digger-float.d2 { top: 78%; animation: drive-across 21s linear infinite reverse; animation-delay: -6s; }
 body.home .digger-float.d3 { top: 46%; animation: drive-across 20s linear infinite; animation-delay: -4s; }
 
+/* digger-1.webp's art faces left, but d3 travels left-to-right, flip it
+   to face the way it's actually driving. digger-2.webp and digger-3.webp
+   already face the right way for d1 and d2. */
+body.home .digger-float.d3 img { transform: scaleX(-1); }
+
 @keyframes drive-across {
   from { transform: translateX(-30vw); }
   to { transform: translateX(130vw); }
 }
 
-/* Dust kicks up right as each digger reaches the edge of the screen and
-   exits. Matches the parent's own drive-across timing exactly (same
-   duration, direction, delay) so the puff lands in sync regardless of
-   which way that digger is travelling. */
-.edge-dust-1 { bottom: 4px; left: 10%; width: 24px; height: 24px; animation: edge-dust 17s linear infinite; }
-.edge-dust-2 { bottom: 4px; right: 10%; width: 24px; height: 24px; animation: edge-dust 21s linear infinite reverse; animation-delay: -6s; }
-.edge-dust-3 { bottom: 4px; left: 10%; width: 24px; height: 24px; animation: edge-dust 20s linear infinite; animation-delay: -4s; }
+/* Dust as it reaches the edge of the screen. Kept as standalone elements
+   fixed at the actual screen edges rather than children of the digger
+   div, since a child would inherit the digger's low opacity and, worse,
+   would already be carried off-screen by the parent's own translateX by
+   the time it was meant to flash. Timed with the same duration/direction
+   /delay as each digger so the puff fires when that digger is actually
+   there. */
+.edge-dust {
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 169, 30, 0.55), rgba(240, 169, 30, 0) 70%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dust-1 { top: 16%; right: 1%; animation: edge-dust 17s linear infinite; }
+.dust-2 { top: 80%; left: 1%; animation: edge-dust 21s linear infinite reverse; animation-delay: -6s; }
+.dust-3 { top: 48%; right: 1%; animation: edge-dust 20s linear infinite; animation-delay: -4s; }
 
 @keyframes edge-dust {
-  0%, 86% { opacity: 0; transform: scale(0.4); }
-  92% { opacity: 0.6; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.5); }
+  0%, 76% { opacity: 0; transform: scale(0.4); }
+  81% { opacity: 0.7; transform: scale(1); }
+  90% { opacity: 0; transform: scale(1.6); }
+  100% { opacity: 0; }
 }
 
 /* The rig: one truck driving continuously from one end of the site to
@@ -730,6 +750,7 @@ body.home .digger-float.d3 { top: 46%; animation: drive-across 20s linear infini
   .boot-overlay { display: none; }
   .hero-digger,
   .dust,
+  .edge-dust,
   .btn-primary,
   .rig-truck,
   .rig-stripe,
