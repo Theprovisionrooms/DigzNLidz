@@ -88,6 +88,22 @@ body.home h3 {
 
 .home-topbar nav a:hover { opacity: 1; }
 
+.hours-strip {
+  background: var(--yellow);
+  color: var(--site-black);
+  text-align: center;
+  font-family: "Barlow", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  margin-top: 14px;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 600px) {
+  .hours-strip { font-size: 12px; padding: 8px 10px; }
+}
+
 @media (max-width: 640px) {
   .home-topbar nav { display: none; }
 }
@@ -642,6 +658,7 @@ body.home .digger-float {
   left: 0;
   right: auto;
   bottom: auto;
+  display: block; /* base.css hides .digger-float below 600px, this page wants them visible */
   -webkit-transform: translateZ(0);
   will-change: transform;
   -webkit-backface-visibility: hidden;

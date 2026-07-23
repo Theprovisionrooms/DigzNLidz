@@ -38,7 +38,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 
 ## QR seat sessions
 - [x] Generate 16 unique seat QR codes, public/assets/qr/seat-1.png to seat-16.png
-- [x] Generate 8 cafe table QR codes, public/assets/qr/table-1.png to table-8.png, encode https://digznlidz.co.uk/table/?table=N, same 600x600 style as the seat codes
+- [x] Generate cafe table QR codes, public/assets/qr/table-1.png to table-8.png, encode https://digznlidz.co.uk/table/?table=N, same 600x600 style as the seat codes. Built for a max of 8 as spares, real number probably 6 but not confirmed, print however many are actually needed and keep the rest in reserve
 - [x] Seat landing page (start session / order food), /seat/?seat=N
 - [x] Seat status endpoint (GET /api/seats/:id)
 - [x] Start session endpoint, handles paid tiers via Square Web Payments SDK sourceId
@@ -54,7 +54,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Order endpoint, tagged to seat + session, charged via Square sourceId
 - [x] Order UI on seat page
 - [x] Order sent to staff, dashboard has a live orders panel (placed/preparing/delivered)
-- [x] Cafe tables (8, away from the pit): QR ordering with no digger session attached, /table/?table=N, functions/api/tables/[id]/order.js, migrations/0004_cafe_tables.sql adds table_id to orders. Every order is a fresh one-off card charge since there's no session to keep a card on file against. Dashboard orders panel labels these "Table N" instead of "Seat N" so staff know where to deliver
+- [x] Cafe tables (built for a max of 8 as spare capacity, real number likely 6 but not confirmed with Mark and Danny yet, code supports 1-8 and can be trimmed down whenever the actual number's confirmed, that's a one-line change): QR ordering with no digger session attached, /table/?table=N, functions/api/tables/[id]/order.js, migrations/0004_cafe_tables.sql adds table_id to orders. Every order is a fresh one-off card charge since there's no session to keep a card on file against. Dashboard orders panel labels these "Table N" instead of "Seat N" so staff know where to deliver
 
 ## Payments (Square)
 - [x] Square API client (payment links, direct charge, webhook verification)
