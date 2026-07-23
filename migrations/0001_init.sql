@@ -8,15 +8,15 @@ CREATE TABLE settings (
 
 -- seeded on first deploy: tier names, tier lengths, tier prices, extension price
 INSERT INTO settings (key, value) VALUES
-  ('tier_1_name', 'Tier 1'),
+  ('tier_1_name', '15 Minutes'),
   ('tier_1_minutes', '15'),
-  ('tier_1_price_pence', '0'),
-  ('tier_2_name', 'Tier 2'),
+  ('tier_1_price_pence', '500'),
+  ('tier_2_name', '30 Minutes'),
   ('tier_2_minutes', '30'),
-  ('tier_2_price_pence', '0'),
-  ('tier_3_name', 'Tier 3'),
+  ('tier_2_price_pence', '1000'),
+  ('tier_3_name', '60 Minutes'),
   ('tier_3_minutes', '60'),
-  ('tier_3_price_pence', '0'),
+  ('tier_3_price_pence', '1500'),
   ('extension_minutes', '15'),
   ('extension_price_pence', '500');
 
