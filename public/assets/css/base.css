@@ -231,7 +231,12 @@ textarea.field {
   padding: 22px 20px 0;
 }
 
-.site-topbar img { height: 34px; }
+.site-topbar img {
+  height: 34px;
+  width: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 
 .site-topbar a.back {
   color: var(--bone);
