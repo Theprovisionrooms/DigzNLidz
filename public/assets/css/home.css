@@ -706,6 +706,8 @@ body.home .digger-float.d3 img { transform: scaleX(-1); }
   pointer-events: none;
   overflow: hidden;
   opacity: 0.5;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .rig-stripe {
@@ -729,11 +731,16 @@ body.home .digger-float.d3 img { transform: scaleX(-1); }
 }
 
 .rig-truck {
+  display: block;
   position: absolute;
   top: 0;
+  left: 0;
   width: 92px;
   height: auto;
   animation: drive-across 24s linear infinite;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 @media (max-width: 600px) {
