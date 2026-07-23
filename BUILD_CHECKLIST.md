@@ -12,7 +12,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [ ] Branding assets received (logo files, photography, digger imagery direction)
 - [x] Tier names + pricing confirmed: 15 min £5, 30 min £10, 60 min £15 (migrations/0003_tier_pricing.sql)
 - [x] Corporate booking process signed off, Jordan's call, existing enquiry -> confirm -> payment link flow stands as built
-- [ ] Business hours, not needed yet, Jordan will provide when confirmed (affects: booking slot availability, any "open now" copy, contact page/footer hours if added later)
+- [x] Business hours confirmed: Wed-Thu 11am-6pm, Fri-Sat 11am-8pm, Sun 11am-6pm, closed Mon/Tue. Single source of truth in functions/api/config.js (BUSINESS_HOURS), server-side enforced on the booking endpoint (functions/api/bookings/index.js rejects bookings outside hours or on closed days), client-side hint + check on the booking form for a faster no-round-trip response, added to FAQ (schema + visible card) and Contact page
 
 ## Data model (D1)
 - [x] bookings (type: family/group/corporate, status, date, slot, deposit_status)

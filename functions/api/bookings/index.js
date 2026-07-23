@@ -6,11 +6,24 @@
 
 import { createPaymentLink } from "../../lib/square.js";
 import { sendEmail } from "../../lib/email.js";
+import { BUSINESS_HOURS } from "../config.js";
 
 const DEPOSIT_PENCE = {
   family: 1000, // placeholder, confirm real amount with Digz N' Lidz
   group: 2000,  // placeholder
 };
+
+// bookingDate is "YYYY-MM-DD", parsed as UTC midnight which is fine here
+// since we only need the day of week, not a precise instant.
+function checkWithinHours(bookingDate, slotTime) {
+  const day = new Date(`${bookingDate}T00:00:00Z`).getUTCDay();
+  const hours = BUSINESS_HOURS[day];
+  if (!hours) return { ok: false, error: "We're closed that day. Open Wednesday to Sunday." };
+  if (slotTime < hours.open || slotTime >= hours.close) {
+    return { ok: false, error: `That time's outside our hours for that day, ${hours.open} to ${hours.close}.` };
+  }
+  return { ok: true };
+}
 
 async function applyDiscount(db, code, amountPence) {
   if (!code) return { finalAmountPence: amountPence, discountCode: null };
@@ -41,6 +54,11 @@ export async function onRequestPost({ request, env }) {
   }
   if (!name || !email || !bookingDate || !slotTime) {
     return Response.json({ error: "missing required fields" }, { status: 400 });
+  }
+
+  const hoursCheck = checkWithinHours(bookingDate, slotTime);
+  if (!hoursCheck.ok) {
+    return Response.json({ error: hoursCheck.error }, { status: 400 });
   }
 
   const baseDeposit = DEPOSIT_PENCE[type];

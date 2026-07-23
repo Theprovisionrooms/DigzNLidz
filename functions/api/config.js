@@ -5,6 +5,16 @@
 import { getSettings } from "../lib/settings.js";
 import { listMenuItems } from "../lib/square.js";
 
+// Confirmed by Jordan. Keyed by JS Date.getDay(): 0 Sun, 1 Mon ... 6 Sat.
+// Monday and Tuesday aren't listed here at all, meaning closed.
+export const BUSINESS_HOURS = {
+  0: { open: "11:00", close: "18:00" }, // Sunday
+  3: { open: "11:00", close: "18:00" }, // Wednesday
+  4: { open: "11:00", close: "18:00" }, // Thursday
+  5: { open: "11:00", close: "20:00" }, // Friday
+  6: { open: "11:00", close: "20:00" }, // Saturday
+};
+
 // Falls back to this if Square's catalog can't be reached (not configured
 // yet, API hiccup, whatever). Ordering should never break because of it.
 const FALLBACK_MENU = [
@@ -43,6 +53,7 @@ export async function onRequestGet({ env }) {
       pricePence: Number(settings.extension_price_pence),
     },
     menu,
+    hours: BUSINESS_HOURS,
   }, {
     headers: { "Cache-Control": "public, max-age=60" },
   });
