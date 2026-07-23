@@ -642,6 +642,10 @@ body.home .digger-float {
   left: 0;
   right: auto;
   bottom: auto;
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 body.home .digger-float img {
