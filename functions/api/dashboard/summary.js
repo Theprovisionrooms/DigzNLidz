@@ -16,7 +16,7 @@ export async function onRequestGet({ request, env }) {
     bookingsToday,
     bookingsTodayDetail,
     bookingsWeek,
-    depositRevenue,
+    bookingRevenue,
     orderRevenue,
     extensionCount,
     seats,
@@ -29,11 +29,11 @@ export async function onRequestGet({ request, env }) {
     // Full detail for today, sorted by slot, so staff know exactly how
     // many seats to hold free and when, not just a headline count.
     db.prepare(
-      `SELECT name, type, party_size, slot_time, deposit_status
+      `SELECT id, name, type, party_size, slot_time, payment_status, tier_breakdown_json, tier_redeemed_json
        FROM bookings WHERE booking_date = ? ORDER BY slot_time ASC`
     ).bind(today).all(),
     db.prepare(`SELECT COUNT(*) as n FROM bookings WHERE created_at >= ?`).bind(weekAgo).first(),
-    db.prepare(`SELECT COALESCE(SUM(deposit_amount_pence),0) as total FROM bookings WHERE deposit_status = 'paid'`).first(),
+    db.prepare(`SELECT COALESCE(SUM(total_amount_pence),0) as total FROM bookings WHERE payment_status = 'paid'`).first(),
     db.prepare(`SELECT COALESCE(SUM(total_pence),0) as total FROM orders`).first(),
     db.prepare(`SELECT COALESCE(SUM(extensions_count),0) as total FROM sessions`).first(),
     db.prepare(`SELECT * FROM seats ORDER BY id`).all(),
@@ -65,7 +65,7 @@ export async function onRequestGet({ request, env }) {
     bookingsTodayDetail: bookingsTodayDetail.results,
     bookingsThisWeek: bookingsWeek.n,
     revenue: {
-      depositsPence: depositRevenue.total,
+      bookingsPence: bookingRevenue.total,
       foodDrinkPence: orderRevenue.total,
       extensionsPence: extensionCount.total * extensionPricePence,
     },

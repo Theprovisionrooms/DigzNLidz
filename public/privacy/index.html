@@ -35,7 +35,7 @@
 
     <div class="card">
       <h2>What we collect, and why</h2>
-      <p><strong>Booking a session (family, group, or corporate):</strong> name, email address, phone number (optional), party size, and any notes you add. Used to hold your booking, contact you about it, and process any deposit.</p>
+      <p><strong>Booking a session (family or group):</strong> name, email address, phone number (optional), how many people and which session length each picked, and any notes you add. Used to hold your booking, contact you about it, and process payment. Corporate and private event enquiries go through a separate process and may involve a deposit agreed directly with you.</p>
       <p><strong>Joining the mailing list:</strong> your email address, and whether you signed up through a booking, an order, or directly. Used to send offers and updates. You can unsubscribe at any time, [ADD UNSUBSCRIBE MECHANISM DETAIL].</p>
       <p><strong>Ordering food or drink:</strong> what you ordered and which seat or table it's for. No account or personal details are collected for this beyond payment, covered below.</p>
       <p><strong>Contacting us directly:</strong> whatever you include in your message, plus your email address to reply to you.</p>
@@ -44,7 +44,14 @@
     <div class="card">
       <h2>Payments</h2>
       <p>All card payments are processed directly by Square. Card numbers and card details are entered straight into Square's own secure payment form and never pass through or get stored on our servers or database. We keep a reference to the payment (a transaction ID) so we can match it to your booking or order, not your card details.</p>
-      <p>See <a href="https://squareup.com/gb/en/legal/general/privacy" target="_blank" rel="noopener" style="color:var(--yellow);">Square's own privacy policy</a> for how they handle payment data.</p>
+      <p>Square's payment form sets its own cookies as part of processing your payment securely and detecting fraud, this is confirmed directly in Square's own privacy notice. These aren't set by us and we don't control them, they're part of using Square's payment form, which only loads on the pages where you're actually paying (booking, seat ordering, table ordering).</p>
+      <p>See <a href="https://squareup.com/gb/en/legal/general/privacy" target="_blank" rel="noopener" style="color:var(--yellow);">Square's own privacy policy</a> for how they handle payment data and cookies.</p>
+    </div>
+
+    <div class="card">
+      <h2>Other services this site uses</h2>
+      <p><strong>Cloudflare</strong> hosts the website, database, and booking system. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener" style="color:var(--yellow);">Cloudflare's privacy policy</a>.</p>
+      <p><strong>Resend</strong> sends booking confirmations and other transactional emails on our behalf. See <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener" style="color:var(--yellow);">Resend's privacy policy</a>.</p>
     </div>
 
     <div class="card">
@@ -54,9 +61,31 @@
     </div>
 
     <div class="card">
-      <h2>Cookies and tracking</h2>
-      <p>This site uses Cloudflare Web Analytics to see how many people visit and which pages are popular. It doesn't use cookies, doesn't track you individually, and doesn't build a profile of your visit. [CONFIRM: Square's payment form may set its own cookies or use device information as part of its fraud prevention, this should be checked against Square's current documentation before publishing, since it may need mentioning here or covering with a cookie banner].</p>
-      <p>A small piece of browser storage (not a cookie) is used on the homepage so the intro animation only plays once per visit. Nothing is sent to a server because of this, it stays on your device.</p>
+      <h2>Cookies and similar technology</h2>
+      <p>Here's everything that's actually used, and why:</p>
+      <table style="width:100%; border-collapse:collapse; margin:10px 0; font-size:14px;">
+        <tr style="border-bottom:1px solid #3a3530;">
+          <th style="text-align:left; padding:6px 8px;">What</th>
+          <th style="text-align:left; padding:6px 8px;">Purpose</th>
+          <th style="text-align:left; padding:6px 8px;">Type</th>
+        </tr>
+        <tr style="border-bottom:1px solid #3a3530;">
+          <td style="padding:6px 8px;">Square payment cookies</td>
+          <td style="padding:6px 8px;">Processing your payment securely, fraud prevention</td>
+          <td style="padding:6px 8px;">Set by Square, only on pages where you're paying</td>
+        </tr>
+        <tr style="border-bottom:1px solid #3a3530;">
+          <td style="padding:6px 8px;">Cloudflare Web Analytics</td>
+          <td style="padding:6px 8px;">Seeing how many people visit and which pages are popular</td>
+          <td style="padding:6px 8px;">No cookies, doesn't track you individually</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 8px;">Homepage intro animation flag</td>
+          <td style="padding:6px 8px;">So the intro only plays once per visit</td>
+          <td style="padding:6px 8px;">Browser storage, not a cookie, never sent to a server</td>
+        </tr>
+      </table>
+      <p>[CONFIRM: whether the Square payment cookies should be treated as strictly necessary (exempt from consent under UK PECR since they're part of completing a transaction you've explicitly started) or whether a fuller opt-in mechanism is needed instead of the notice banner currently in place. This is a call for whoever reviews this policy, not one made here.]</p>
     </div>
 
     <div class="card">
@@ -79,5 +108,6 @@
   <footer class="site-footer">Digz N' Lidz RC Experience Cafe</footer>
   <p class="social-line"><a href="https://www.facebook.com/share/1c18kJmS4B/?mibextid=wwXIfr" target="_blank" rel="noopener">Facebook</a><a href="https://www.instagram.com/digz.n.lidz" target="_blank" rel="noopener">Instagram</a><a href="https://youtube.com/@digznlidz" target="_blank" rel="noopener">YouTube</a><a href="https://www.tiktok.com/@digz.n.lidz?lang=en-GB" target="_blank" rel="noopener">TikTok</a></p>
   <p class="credit-line">All systems powered and built by <a href="https://getsidedoor.co.uk" target="_blank" rel="noopener">Sidedoor Digital</a></p>
+  <script src="/assets/js/cookie-notice.js"></script>
 </body>
 </html>

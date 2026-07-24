@@ -45,8 +45,10 @@ CREATE TABLE bookings (
   party_size INTEGER,
   booking_date TEXT NOT NULL,
   slot_time TEXT NOT NULL,
-  deposit_status TEXT NOT NULL DEFAULT 'unpaid',  -- unpaid, paid, waived
-  deposit_amount_pence INTEGER,
+  payment_status TEXT NOT NULL DEFAULT 'unpaid',  -- unpaid, paid, waived
+  total_amount_pence INTEGER,
+  tier_breakdown_json TEXT,         -- e.g. {"tier_1":2,"tier_2":0,"tier_3":1}
+  tier_redeemed_json TEXT NOT NULL DEFAULT '{}',
   square_payment_id TEXT,
   notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))

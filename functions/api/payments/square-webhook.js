@@ -36,15 +36,15 @@ export async function onRequestPost({ request, env }) {
 
   if (refType === "booking") {
     const booking = await env.DB.prepare(`SELECT * FROM bookings WHERE id = ?`).bind(refId).first();
-    if (booking && booking.deposit_status !== "paid") {
-      await env.DB.prepare(`UPDATE bookings SET deposit_status = 'paid' WHERE id = ?`).bind(refId).run();
+    if (booking && booking.payment_status !== "paid") {
+      await env.DB.prepare(`UPDATE bookings SET payment_status = 'paid' WHERE id = ?`).bind(refId).run();
       await env.DB.prepare(
         `INSERT INTO mailing_list (email, source) VALUES (?, 'booking') ON CONFLICT(email) DO NOTHING`
       ).bind(booking.email).run();
       await sendEmail(env, {
         to: booking.email,
         subject: "Your Digz N' Lidz booking is confirmed",
-        html: `<p>Hi ${booking.name},</p><p>Your booking for ${booking.booking_date} at ${booking.slot_time} is confirmed. See you then.</p>`,
+        html: `<p>Hi ${booking.name},</p><p>Your booking for ${booking.booking_date} at ${booking.slot_time} is confirmed and paid in full. See you then, just give your name at the door.</p>`,
       });
     }
   }

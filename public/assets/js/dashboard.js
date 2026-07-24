@@ -138,6 +138,8 @@ async function createDiscountCode() {
 // Staff-facing nudge: no automatic seat blocking exists (soft block, by
 // design, see BUILD_CHECKLIST), so this has to do the job of making sure
 // nobody misses that a family or group needs seats held for them.
+const TIER_LABELS = { tier_1: "15min", tier_2: "30min", tier_3: "60min" };
+
 function renderHoldPanel(bookings) {
   const list = document.getElementById("hold-list");
   const now = new Date();
@@ -160,13 +162,48 @@ function renderHoldPanel(bookings) {
 
   list.innerHTML = upcoming.map((b) => {
     const urgent = b.slotMinutes - nowMinutes <= 60;
+    const breakdown = JSON.parse(b.tier_breakdown_json || "{}");
+    const redeemed = JSON.parse(b.tier_redeemed_json || "{}");
+    const notPaid = b.payment_status !== "paid";
+
+    const tierButtons = Object.keys(TIER_LABELS).map((tier) => {
+      const paidFor = Number(breakdown[tier]) || 0;
+      const done = Number(redeemed[tier]) || 0;
+      if (paidFor === 0) return "";
+      const remaining = paidFor - done;
+      return `<button
+        ${remaining <= 0 || notPaid ? "disabled" : ""}
+        onclick="redeemSeat(${b.id}, '${tier}')"
+        style="margin:2px 4px 0 0;font-size:12px;padding:4px 8px;"
+      >${TIER_LABELS[tier]}: ${done}/${paidFor}</button>`;
+    }).join("");
+
     return `
-      <div class="hold-row ${urgent ? "urgent" : ""}">
-        <span>${b.slot_time} &middot; ${b.name} (${b.type})</span>
-        <span class="seats-needed">${b.party_size || "?"} seats</span>
+      <div class="hold-row ${urgent ? "urgent" : ""}" style="flex-direction:column;align-items:flex-start;gap:4px;">
+        <div style="display:flex;justify-content:space-between;width:100%;">
+          <span>${b.slot_time} &middot; ${b.name} (${b.type})</span>
+          <span class="seats-needed">${b.party_size || "?"} seats ${notPaid ? "&middot; unpaid" : ""}</span>
+        </div>
+        <div>${tierButtons}</div>
       </div>
     `;
   }).join("");
+}
+
+async function redeemSeat(bookingId, tier) {
+  const seatId = prompt(`Which seat number for this ${TIER_LABELS[tier]} slot?`);
+  if (!seatId) return;
+  const res = await fetch(`/api/bookings/${bookingId}/redeem-seat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seatId: Number(seatId), tier }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    alert(err.error || "Something went wrong");
+    return;
+  }
+  loadDashboard();
 }
 
 function render(data) {
@@ -175,7 +212,7 @@ function render(data) {
     <div class="seat-tile seat-${s.status}" title="Seat ${s.id}: ${s.status}">${s.id}</div>
   `).join("");
 
-  document.getElementById("rev-deposits").textContent = pence(data.revenue.depositsPence);
+  document.getElementById("rev-bookings").textContent = pence(data.revenue.bookingsPence);
   document.getElementById("rev-food").textContent = pence(data.revenue.foodDrinkPence);
   document.getElementById("rev-extensions").textContent = pence(data.revenue.extensionsPence);
 

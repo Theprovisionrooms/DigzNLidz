@@ -262,6 +262,51 @@ textarea.field {
   margin-bottom: 10px;
 }
 
+.cookie-notice {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 200;
+  max-width: 520px;
+  margin: 0 auto;
+  background: #1a1a1a;
+  border: 1px solid var(--yellow);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+.cookie-notice p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--bone);
+  opacity: 0.85;
+  flex: 1 1 220px;
+}
+
+.cookie-notice a {
+  color: var(--yellow);
+}
+
+.cookie-notice button {
+  background: var(--yellow);
+  color: var(--site-black);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
 .site-footer {
   text-align: center;
   padding: 30px 0;
