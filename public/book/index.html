@@ -58,6 +58,16 @@
         <span class="field-label">Discount code (if you have one)</span>
         <input id="discountCode" class="field">
 
+        <label style="display:flex;align-items:flex-start;gap:8px;margin-top:16px;font-size:13px;color:var(--bone);opacity:0.85;">
+          <input type="checkbox" id="marketingConsent" style="margin-top:3px;">
+          <span>Keep me updated with offers and news from Digz N' Lidz (optional, you can opt out any time)</span>
+        </label>
+
+        <label style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;font-size:13px;color:var(--bone);">
+          <input type="checkbox" id="termsConsent" required style="margin-top:3px;">
+          <span>I agree to the <a href="/terms/" target="_blank" style="color:var(--yellow);">Terms &amp; Conditions</a> and <a href="/privacy/" target="_blank" style="color:var(--yellow);">Privacy Policy</a></span>
+        </label>
+
         <div id="total-line" style="margin-top:16px;font-size:15px;color:var(--yellow);font-weight:600;"></div>
 
         <button type="submit" style="margin-top:20px;">Continue to payment</button>

@@ -17,7 +17,7 @@ export async function onRequestPost({ request, env }) {
   if (!(await isAuthenticated(request, env))) return unauthorizedResponse();
 
   const body = await request.json().catch(() => ({}));
-  const { tag, subject, html } = body;
+  const { tag, subject, html, limit } = body;
 
   if (!tag || !subject || !html) {
     return Response.json({ error: "tag, subject, and html are required" }, { status: 400 });
@@ -54,7 +54,7 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  const toSend = recipients.slice(0, remaining);
+  const toSend = recipients.slice(0, limit ? Math.min(remaining, limit) : remaining);
   const deferred = recipients.length - toSend.length;
 
   const insert = await env.DB.prepare(
@@ -87,6 +87,8 @@ export async function onRequestPost({ request, env }) {
       .run();
   }
 
+  const hitOwnLimit = limit && limit < remaining && limit < recipients.length;
+
   return Response.json({
     status: "sent",
     tag,
@@ -94,7 +96,9 @@ export async function onRequestPost({ request, env }) {
     deferred,
     message:
       deferred > 0
-        ? `sent to ${sentCount}, ${deferred} more tagged "${tag}" left for tomorrow (today's free-tier cap of 100 emails is used up)`
+        ? hitOwnLimit
+          ? `sent to ${sentCount}, ${deferred} more tagged "${tag}" left, raise or remove the limit and send again to reach them`
+          : `sent to ${sentCount}, ${deferred} more tagged "${tag}" left for tomorrow (today's free-tier cap of 100 emails is used up)`
         : `sent to ${sentCount} subscribers tagged "${tag}"`,
   });
 }

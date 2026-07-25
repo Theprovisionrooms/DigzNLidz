@@ -104,9 +104,9 @@
       <div class="card">
         <h2>Mailing list</h2>
         <div class="stat-row"><span>Total subscribers</span><span id="mailing-count">-</span></div>
-        <div id="mailing-trend" style="margin-top:8px;"></div>
+        <div id="mailing-trend" style="margin-top:8px;max-height:160px;overflow-y:auto;"></div>
         <h3 style="font-size:14px;color:var(--yellow);margin-top:16px;">By party type</h3>
-        <div id="mailing-segments"><small>No tagged signups yet.</small></div>
+        <div id="mailing-segments" style="max-height:140px;overflow-y:auto;"><small>No tagged signups yet.</small></div>
       </div>
 
       <div class="card">
@@ -120,6 +120,7 @@
         </select>
         <input id="camp-subject" placeholder="Subject line" style="width:100%;padding:8px;margin:6px 0;">
         <textarea id="camp-body" placeholder="Email body (HTML is fine, e.g. <p>...)" rows="5" style="width:100%;padding:8px;margin:6px 0;font-family:inherit;"></textarea>
+        <input id="camp-limit" type="number" min="1" placeholder="Limit number of emails (optional, defaults to today's remaining quota)" style="width:100%;padding:8px;margin:6px 0;">
         <button onclick="sendCampaign()" style="width:100%;padding:10px;">Send</button>
         <div id="camp-status" style="font-size:13px;margin-top:8px;"></div>
       </div>
@@ -134,10 +135,10 @@
         <div id="orders-list"></div>
       </div>
 
-      <div class="card">
-        <h2>Corporate enquiries awaiting confirmation</h2>
-        <div id="corporate-list"></div>
-      </div>
+      <details class="card">
+        <summary style="cursor:pointer;"><h2 style="display:inline;">Corporate enquiries awaiting confirmation</h2></summary>
+        <div id="corporate-list" style="margin-top:12px;"></div>
+      </details>
 
       <div class="card">
         <h2>Discount codes</h2>

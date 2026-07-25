@@ -139,6 +139,7 @@ async function sendCampaign() {
   const tag = document.getElementById("camp-tag").value;
   const subject = document.getElementById("camp-subject").value.trim();
   const html = document.getElementById("camp-body").value.trim();
+  const limit = Number(document.getElementById("camp-limit").value) || null;
   const statusEl = document.getElementById("camp-status");
 
   if (!subject || !html) {
@@ -152,7 +153,7 @@ async function sendCampaign() {
   const res = await fetch("/api/dashboard/campaigns/send", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tag, subject, html }),
+    body: JSON.stringify({ tag, subject, html, limit }),
   });
   const data = await res.json();
 
@@ -166,6 +167,7 @@ async function sendCampaign() {
   statusEl.style.color = "var(--yellow)";
   document.getElementById("camp-subject").value = "";
   document.getElementById("camp-body").value = "";
+  document.getElementById("camp-limit").value = "";
   loadDashboard();
 }
 

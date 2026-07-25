@@ -119,14 +119,17 @@ document.getElementById("booking-form").addEventListener("submit", async (e) => 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Something went wrong");
 
-    // Opt in to mailing list, non-blocking. Tagged with the booking type
+    // Opt in to mailing list, non-blocking, and only if they actually
+    // ticked the marketing consent box. Tagged with the booking type
     // (single/couple/family/group) so promos can be targeted by party
     // size later, e.g. a couples offer only going out to couples.
-    fetch("/api/mailing-list", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: payload.email, source: "booking", tags: payload.type }),
-    }).catch(() => {});
+    if (document.getElementById("marketingConsent").checked) {
+      fetch("/api/mailing-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: payload.email, source: "booking", tags: payload.type }),
+      }).catch(() => {});
+    }
 
     window.location.href = data.checkoutUrl;
   } catch (err) {
