@@ -135,6 +135,40 @@ async function createDiscountCode() {
   loadDiscountCodes();
 }
 
+async function sendCampaign() {
+  const tag = document.getElementById("camp-tag").value;
+  const subject = document.getElementById("camp-subject").value.trim();
+  const html = document.getElementById("camp-body").value.trim();
+  const statusEl = document.getElementById("camp-status");
+
+  if (!subject || !html) {
+    alert("Enter a subject and body first.");
+    return;
+  }
+
+  statusEl.textContent = "Sending...";
+  statusEl.style.color = "var(--bone)";
+
+  const res = await fetch("/api/dashboard/campaigns/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tag, subject, html }),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    statusEl.textContent = data.error || "Something went wrong";
+    statusEl.style.color = "var(--rust)";
+    return;
+  }
+
+  statusEl.textContent = data.message;
+  statusEl.style.color = "var(--yellow)";
+  document.getElementById("camp-subject").value = "";
+  document.getElementById("camp-body").value = "";
+  loadDashboard();
+}
+
 // Staff-facing nudge: no automatic seat blocking exists (soft block, by
 // design, see BUILD_CHECKLIST), so this has to do the job of making sure
 // nobody misses that a family or group needs seats held for them.
