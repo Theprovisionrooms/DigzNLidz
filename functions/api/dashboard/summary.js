@@ -23,6 +23,7 @@ export async function onRequestGet({ request, env }) {
     pendingCorporate,
     mailingListCount,
     mailingListTrend,
+    mailingListBySegment,
     campaignPerformance,
   ] = await Promise.all([
     db.prepare(`SELECT COUNT(*) as n, type FROM bookings WHERE booking_date = ? GROUP BY type`).bind(today).all(),
@@ -44,6 +45,11 @@ export async function onRequestGet({ request, env }) {
       `SELECT strftime('%Y-W%W', created_at) as week, COUNT(*) as n
        FROM mailing_list GROUP BY week ORDER BY week DESC LIMIT 8`
     ).all(),
+    // Party-type segments for targeting promos, e.g. a couples offer
+    // only going to people who've booked as a couple. tags is a
+    // comma-separated list (see functions/api/mailing-list/index.js),
+    // so this is counted in JS below rather than with SQL GROUP BY.
+    db.prepare(`SELECT tags FROM mailing_list WHERE tags IS NOT NULL AND tags != ''`).all(),
     // Redemption counts rolled up per campaign, not just per code.
     db.prepare(
       `SELECT c.id, c.name, c.type, c.sent_at,
@@ -60,6 +66,16 @@ export async function onRequestGet({ request, env }) {
     .first();
   const extensionPricePence = Number(extensionRevenue?.value || 0);
 
+  const segmentCounts = {};
+  for (const row of mailingListBySegment.results) {
+    for (const tag of row.tags.split(",").map((t) => t.trim()).filter(Boolean)) {
+      segmentCounts[tag] = (segmentCounts[tag] || 0) + 1;
+    }
+  }
+  const mailingListSegments = Object.entries(segmentCounts)
+    .map(([tag, n]) => ({ tag, n }))
+    .sort((a, b) => b.n - a.n);
+
   return Response.json({
     bookingsToday: bookingsToday.results,
     bookingsTodayDetail: bookingsTodayDetail.results,
@@ -73,6 +89,7 @@ export async function onRequestGet({ request, env }) {
     pendingCorporateEnquiries: pendingCorporate.results,
     mailingListCount: mailingListCount.n,
     mailingListTrend: mailingListTrend.results.reverse(),
+    mailingListSegments,
     campaignPerformance: campaignPerformance.results,
   });
 }

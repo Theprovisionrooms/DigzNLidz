@@ -48,8 +48,57 @@ async function refresh() {
 
 function render({ seat, session }) {
   if (seat.status === "free") return renderTierPicker();
+  if (seat.status === "held") return renderHeldConfirm(seat);
   if (seat.status === "active") return renderActiveSession(session);
   if (seat.status === "awaiting_extension") return renderExtensionPrompt();
+}
+
+// A seat shows "held" once it's auto-pinned to a paid booking ahead of
+// their slot (see workers/session-expiry-cron.js). Holds are by tier
+// (session length), not by named person, so on a mixed-tier family
+// booking any of them could scan any held seat. Rather than guess,
+// show what length this particular seat is holding and let the guest
+// confirm it's theirs before it starts, if it's wrong they just try a
+// different held seat, nothing to undo.
+function renderHeldConfirm(seat) {
+  clearInterval(window.__countdownInterval);
+  const tier = config?.tiers?.[seat.held_tier];
+  const label = tier ? tier.name : "a session";
+
+  app.innerHTML = `
+    <div class="card">
+      <h2>Seat held for a booking</h2>
+      <p>This seat's booked for <strong>${label}</strong>. If that's your session length, confirm below and it'll start straight away. If not, this seat isn't assigned to a specific person, try another held seat instead.</p>
+      <button id="held-confirm-btn">Yes, start my session</button>
+      <button id="held-cancel-btn" class="secondary">Not this one</button>
+    </div>
+  `;
+
+  document.getElementById("held-confirm-btn").addEventListener("click", redeemHeld);
+  document.getElementById("held-cancel-btn").addEventListener("click", () => {
+    app.innerHTML = `<div class="card"><p>No problem, scan a different seat that matches your session length.</p></div>`;
+  });
+}
+
+let redeemInFlight = false;
+async function redeemHeld() {
+  if (redeemInFlight) return;
+  redeemInFlight = true;
+  app.innerHTML = `<div class="card"><h2>Starting your session...</h2></div>`;
+  try {
+    const res = await fetch(`/api/seats/${seatId}/redeem-held`, { method: "POST" });
+    if (!res.ok) {
+      const err = await res.json();
+      app.innerHTML = `<div class="card error">${err.error || "Couldn't start your session, ask a member of staff to help."}</div>`;
+      return;
+    }
+  } catch (e) {
+    app.innerHTML = `<div class="card error">Couldn't start your session, ask a member of staff to help.</div>`;
+    return;
+  } finally {
+    redeemInFlight = false;
+  }
+  refresh();
 }
 
 function renderTierPicker() {

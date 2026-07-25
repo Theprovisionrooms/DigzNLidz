@@ -51,8 +51,8 @@ export async function onRequestPost({ request, env }) {
   const { type, name, email, phone, tierCounts, bookingDate, slotTime, notes, discountCode } = body;
   // tierCounts: { tier_1: 2, tier_2: 0, tier_3: 1 }, how many people want each tier
 
-  if (!["family", "group"].includes(type)) {
-    return Response.json({ error: "type must be family or group" }, { status: 400 });
+  if (!["single", "couple", "family", "group"].includes(type)) {
+    return Response.json({ error: "type must be single, couple, family, or group" }, { status: 400 });
   }
   if (!name || !email || !bookingDate || !slotTime) {
     return Response.json({ error: "missing required fields" }, { status: 400 });

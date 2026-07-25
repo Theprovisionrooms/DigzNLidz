@@ -206,11 +206,48 @@ async function redeemSeat(bookingId, tier) {
   loadDashboard();
 }
 
+// Physical layout of the RC pit: |__| — 5 seats down the left leg, 6
+// across the front, 5 up the right leg, open at the top. This ordering
+// (left top-to-bottom, front left-to-right, right top-to-bottom) is a
+// first-cut placeholder, reorder the numbers below to match the real
+// seat numbers painted on the pit.
+const PIT_LAYOUT = {
+  left:  [1, 2, 3, 4, 5],
+  front: [6, 7, 8, 9, 10, 11],
+  right: [12, 13, 14, 15, 16],
+};
+
+function seatStatusClass(status) {
+  if (status === "free") return "status-free";
+  if (status === "held") return "status-held"; // booked soon, auto-pinned to a booking
+  return "status-taken"; // active or awaiting_extension
+}
+
+function renderPit(seats) {
+  const byId = Object.fromEntries(seats.map((s) => [s.id, s]));
+  const tiles = [];
+
+  PIT_LAYOUT.left.forEach((seatId, i) => {
+    const s = byId[seatId];
+    if (!s) return;
+    tiles.push(`<div class="pit-seat ${seatStatusClass(s.status)}" style="grid-column:1; grid-row:${i + 1};" title="Seat ${seatId}: ${s.status}">${seatId}</div>`);
+  });
+  PIT_LAYOUT.front.forEach((seatId, i) => {
+    const s = byId[seatId];
+    if (!s) return;
+    tiles.push(`<div class="pit-seat ${seatStatusClass(s.status)}" style="grid-column:${i + 2}; grid-row:6;" title="Seat ${seatId}: ${s.status}">${seatId}</div>`);
+  });
+  PIT_LAYOUT.right.forEach((seatId, i) => {
+    const s = byId[seatId];
+    if (!s) return;
+    tiles.push(`<div class="pit-seat ${seatStatusClass(s.status)}" style="grid-column:8; grid-row:${i + 1};" title="Seat ${seatId}: ${s.status}">${seatId}</div>`);
+  });
+
+  document.getElementById("pit-grid").innerHTML = tiles.join("");
+}
+
 function render(data) {
-  const grid = document.getElementById("seat-grid");
-  grid.innerHTML = data.seats.map((s) => `
-    <div class="seat-tile seat-${s.status}" title="Seat ${s.id}: ${s.status}">${s.id}</div>
-  `).join("");
+  renderPit(data.seats);
 
   document.getElementById("rev-bookings").textContent = pence(data.revenue.bookingsPence);
   document.getElementById("rev-food").textContent = pence(data.revenue.foodDrinkPence);
@@ -229,6 +266,13 @@ function render(data) {
         <tr><td>${w.week}</td><td>${w.n}</td></tr>
       `).join("")}</table>`
     : `<p><small>No signups yet.</small></p>`;
+
+  const segmentsEl = document.getElementById("mailing-segments");
+  segmentsEl.innerHTML = data.mailingListSegments.length
+    ? `<table><tr><th>Type</th><th>Subscribers</th></tr>${data.mailingListSegments.map((s) => `
+        <tr><td style="text-transform:capitalize;">${s.tag}</td><td>${s.n}</td></tr>
+      `).join("")}</table>`
+    : `<small>No tagged signups yet.</small>`;
 
   const campaignList = document.getElementById("campaign-list");
   campaignList.innerHTML = data.campaignPerformance.length

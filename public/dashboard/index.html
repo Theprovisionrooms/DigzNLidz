@@ -8,14 +8,28 @@
   <link rel="stylesheet" href="/assets/css/base.css">
   <style>
     .wrap { max-width: 900px; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .seat-tile {
-      aspect-ratio: 1; border-radius: 4px; display: flex; align-items: center;
-      justify-content: center; font-weight: bold; font-size: 14px;
+    :root { --pit-green: #3f8a54; }
+
+    /* RC pit, shaped like the real sandpit: |__| — 5 seats down each
+       side, 6 across the front, open at the top. Reorder PIT_LAYOUT in
+       dashboard.js if the real seat numbering runs the other way. */
+    .pit-grid {
+      display: grid;
+      grid-template-columns: 46px repeat(6, 1fr) 46px;
+      grid-template-rows: repeat(5, 46px) 46px;
+      gap: 6px;
+      max-width: 480px;
     }
-    .seat-free { background: #2c2c2c; color: #888; }
-    .seat-active { background: var(--yellow); color: var(--site-black); }
-    .seat-awaiting_extension { background: var(--rust); color: var(--bone); }
+    .pit-seat {
+      border-radius: 4px; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 13px;
+    }
+    .pit-seat.status-free { background: var(--pit-green); color: var(--site-black); }
+    .pit-seat.status-held { background: var(--yellow); color: var(--site-black); }
+    .pit-seat.status-taken { background: var(--rust); color: var(--bone); }
+    .pit-legend { display: flex; gap: 16px; font-size: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .pit-legend span { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2c2c2c; }
     .stat-row:last-child { border-bottom: none; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -65,8 +79,13 @@
       </div>
 
       <div class="card">
-        <h2>Live seats</h2>
-        <div class="grid" id="seat-grid"></div>
+        <h2>RC Pit</h2>
+        <div class="pit-legend">
+          <span><span class="legend-dot" style="background:var(--pit-green);"></span> Free</span>
+          <span><span class="legend-dot" style="background:var(--yellow);"></span> Booked soon</span>
+          <span><span class="legend-dot" style="background:var(--rust);"></span> Taken</span>
+        </div>
+        <div class="pit-grid" id="pit-grid"></div>
       </div>
 
       <div class="card">
@@ -86,6 +105,8 @@
         <h2>Mailing list</h2>
         <div class="stat-row"><span>Total subscribers</span><span id="mailing-count">-</span></div>
         <div id="mailing-trend" style="margin-top:8px;"></div>
+        <h3 style="font-size:14px;color:var(--yellow);margin-top:16px;">By party type</h3>
+        <div id="mailing-segments"><small>No tagged signups yet.</small></div>
       </div>
 
       <div class="card">
