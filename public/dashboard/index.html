@@ -112,12 +112,14 @@
 
       <div class="card">
         <h2>Send campaign</h2>
-        <p style="font-size:12px;opacity:0.7;margin-top:-4px;">Emails everyone tagged with the chosen party type. Free-tier cap is 100 emails/day, anything over that carries to tomorrow.</p>
+        <p style="font-size:12px;opacity:0.7;margin-top:-4px;">Emails everyone in the chosen segment. Free-tier cap is 100 emails/day, anything over that carries to tomorrow.</p>
         <select id="camp-tag" style="width:100%;padding:8px;margin:6px 0;">
           <option value="single">Single</option>
           <option value="couple">Couple</option>
           <option value="family">Family</option>
           <option value="group">Group</option>
+          <option value="new_customer">New customers (one booking so far)</option>
+          <option value="lapsed">Lapsed (no booking in 90+ days)</option>
         </select>
         <input id="camp-subject" placeholder="Subject line" style="width:100%;padding:8px;margin:6px 0;">
         <textarea id="camp-body" placeholder="Email body (HTML is fine, e.g. <p>...)" rows="5" style="width:100%;padding:8px;margin:6px 0;font-family:inherit;"></textarea>

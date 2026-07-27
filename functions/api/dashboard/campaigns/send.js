@@ -1,6 +1,14 @@
 // POST /api/dashboard/campaigns/send
-// Staff-facing. Sends a one-off email to everyone in the mailing list
-// tagged with the given party type (single/couple/family/group).
+// Staff-facing. Sends a one-off email to a chosen segment: either a party
+// type (single/couple/family/group, stored as a tag on the subscriber at
+// signup) or one of two computed segments worked out fresh from booking
+// history each time this runs, rather than a tag that would go stale:
+//   - new_customer: exactly one paid booking on record, ever
+//   - lapsed: at least one paid booking, but the most recent one was more
+//     than LAPSED_DAYS ago
+// Both computed segments are still scoped to the mailing list, someone
+// has to have opted in to get an email regardless of which segment
+// they're in.
 //
 // Resend's free tier caps at 100 emails/day. This checks how many have
 // already gone out today across all campaigns and only sends up to
@@ -12,6 +20,50 @@ import { isAuthenticated, unauthorizedResponse } from "../../../lib/auth.js";
 import { sendEmail } from "../../../lib/email.js";
 
 const DAILY_SEND_CAP = 100; // Resend free tier
+const LAPSED_DAYS = 90;
+
+async function getSegmentRecipients(db, tag) {
+  if (tag === "new_customer") {
+    const { results } = await db.prepare(
+      `SELECT ml.email FROM mailing_list ml
+       JOIN (
+         SELECT email, COUNT(*) as booking_count
+         FROM bookings
+         WHERE payment_status = 'paid'
+         GROUP BY email
+       ) b ON b.email = ml.email
+       WHERE b.booking_count = 1`
+    ).all();
+    return results;
+  }
+
+  if (tag === "lapsed") {
+    const { results } = await db.prepare(
+      `SELECT ml.email FROM mailing_list ml
+       JOIN (
+         SELECT email, MAX(booking_date) as last_booking
+         FROM bookings
+         WHERE payment_status = 'paid'
+         GROUP BY email
+       ) b ON b.email = ml.email
+       WHERE b.last_booking <= date('now', ?)`
+    )
+      .bind(`-${LAPSED_DAYS} days`)
+      .all();
+    return results;
+  }
+
+  // Party-type tags: comma-separated per subscriber (e.g. "couple,family"),
+  // so this matches the tag as a whole segment, not a substring of
+  // another tag.
+  const { results } = await db.prepare(
+    `SELECT email FROM mailing_list
+     WHERE (',' || tags || ',') LIKE '%,' || ? || ',%'`
+  )
+    .bind(tag)
+    .all();
+  return results;
+}
 
 export async function onRequestPost({ request, env }) {
   if (!(await isAuthenticated(request, env))) return unauthorizedResponse();
@@ -23,18 +75,10 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: "tag, subject, and html are required" }, { status: 400 });
   }
 
-  // tags is a comma-separated list per subscriber (e.g. "couple,family"),
-  // so this matches the tag as a whole segment, not a substring of
-  // another tag.
-  const { results: recipients } = await env.DB.prepare(
-    `SELECT email FROM mailing_list
-     WHERE (',' || tags || ',') LIKE '%,' || ? || ',%'`
-  )
-    .bind(tag)
-    .all();
+  const recipients = await getSegmentRecipients(env.DB, tag);
 
   if (recipients.length === 0) {
-    return Response.json({ error: `no subscribers tagged "${tag}"` }, { status: 400 });
+    return Response.json({ error: `no subscribers in segment "${tag}"` }, { status: 400 });
   }
 
   const todayStart = new Date();
@@ -97,8 +141,8 @@ export async function onRequestPost({ request, env }) {
     message:
       deferred > 0
         ? hitOwnLimit
-          ? `sent to ${sentCount}, ${deferred} more tagged "${tag}" left, raise or remove the limit and send again to reach them`
-          : `sent to ${sentCount}, ${deferred} more tagged "${tag}" left for tomorrow (today's free-tier cap of 100 emails is used up)`
-        : `sent to ${sentCount} subscribers tagged "${tag}"`,
+          ? `sent to ${sentCount}, ${deferred} more in "${tag}" left, raise or remove the limit and send again to reach them`
+          : `sent to ${sentCount}, ${deferred} more in "${tag}" left for tomorrow (today's free-tier cap of 100 emails is used up)`
+        : `sent to ${sentCount} subscribers in "${tag}"`,
   });
 }
