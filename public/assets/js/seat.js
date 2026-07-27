@@ -51,6 +51,11 @@ function render({ seat, session }) {
   if (seat.status === "held") return renderHeldConfirm(seat);
   if (seat.status === "active") return renderActiveSession(session);
   if (seat.status === "awaiting_extension") return renderExtensionPrompt();
+  if (seat.status === "starting") {
+    // Someone else's scan of this exact seat is mid-payment right now,
+    // this only ever shows briefly. Just wait for the next poll.
+    app.innerHTML = `<div class="card"><p>Someone's just starting a session here, one moment...</p></div>`;
+  }
 }
 
 // A seat shows "held" once it's auto-pinned to a paid booking ahead of
@@ -344,7 +349,7 @@ function bindMenuHandlers() {
 
   document.getElementById("order-submit").addEventListener("click", async () => {
     const items = config.menu.filter((m) => cart[m.id] > 0).map((m) => ({
-      name: m.name, quantity: cart[m.id], pricePence: m.pricePence,
+      id: m.id, quantity: cart[m.id],
     }));
     const errorEl = document.getElementById("order-error");
     if (items.length === 0) {
@@ -352,7 +357,11 @@ function bindMenuHandlers() {
       return;
     }
 
-    const totalPence = items.reduce((sum, item) => sum + item.pricePence * item.quantity, 0);
+    // Shown to the customer for the card form's amount only, the server
+    // re-prices every item itself before charging anything.
+    const totalPence = config.menu
+      .filter((m) => cart[m.id] > 0)
+      .reduce((sum, m) => sum + m.pricePence * cart[m.id], 0);
     const cardOnFile = !!currentSession?.cardOnFile;
 
     try {

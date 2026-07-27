@@ -69,7 +69,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Signup capture endpoint
 - [x] Booking confirmation auto-adds to mailing list
 - [x] Resend templates styled to brand (functions/lib/email.js, brandedEmail wrapper, used on booking confirmation, corporate deposit link, corporate deposit confirmation)
-- [x] Cron-triggered automated campaigns, workers/winback-cron.js, weekly, finds lapsed subscribers, generates a 10% code, emails it, tracks who's been sent to so it doesn't repeat. Deploys separately, see workers/wrangler-winback.toml
+- [ ] Cron-triggered automated winback campaign, weekly, finds lapsed subscribers, generates a 10% code, emails it, tracks who's been sent to so it doesn't repeat, deploys separately as its own Worker. Previously checked off referencing workers/winback-cron.js and workers/wrangler-winback.toml, neither file exists in the repo, unchecked until it's actually built (or found, if it exists somewhere outside this repo)
 - [x] Discount code redemption logic wired into booking checkout
 - [x] Dashboard: create discount codes, view redemption counts
 

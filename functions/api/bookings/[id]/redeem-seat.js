@@ -39,6 +39,18 @@ export async function onRequestPost({ params, request, env }) {
     return Response.json({ error: "seat is not free" }, { status: 409 });
   }
 
+  // Atomic claim, same reasoning as seats/[id]/start.js: if a guest's own
+  // scan and a staff member's manual redeem land on the same seat at once,
+  // only one should win.
+  const claim = await env.DB.prepare(
+    `UPDATE seats SET status = 'starting' WHERE id = ? AND status = 'free'`
+  )
+    .bind(seatId)
+    .run();
+  if (!claim.meta.changes) {
+    return Response.json({ error: "seat is not free" }, { status: 409 });
+  }
+
   const tierConfig = await getTierConfig(env.DB, tier);
   const startedAt = new Date();
   const endsAt = new Date(startedAt.getTime() + tierConfig.minutes * 60 * 1000);

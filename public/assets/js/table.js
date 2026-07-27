@@ -74,7 +74,7 @@ function bindHandlers() {
 
   document.getElementById("order-submit").addEventListener("click", async () => {
     const items = config.menu.filter((m) => cart[m.id] > 0).map((m) => ({
-      name: m.name, quantity: cart[m.id], pricePence: m.pricePence,
+      id: m.id, quantity: cart[m.id],
     }));
     const errorEl = document.getElementById("order-error");
     errorEl.style.color = "";
@@ -83,7 +83,11 @@ function bindHandlers() {
       return;
     }
 
-    const totalPence = items.reduce((sum, item) => sum + item.pricePence * item.quantity, 0);
+    // Shown to the customer for the card form's amount only, the server
+    // re-prices every item itself before charging anything.
+    const totalPence = config.menu
+      .filter((m) => cart[m.id] > 0)
+      .reduce((sum, m) => sum + m.pricePence * cart[m.id], 0);
 
     try {
       await collectCardAndSubmit(async (sourceId) => {

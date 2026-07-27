@@ -18,6 +18,19 @@ export async function onRequestPost({ params, env }) {
     return Response.json({ error: "seat is not being held for a booking" }, { status: 409 });
   }
 
+  // Atomic claim: two people from the same mixed-tier booking could both
+  // tap "confirm" on the same held seat within the same moment (see the
+  // comment in seat.js about holds not being tied to a named person).
+  // Only one should be able to redeem it.
+  const claim = await env.DB.prepare(
+    `UPDATE seats SET status = 'starting' WHERE id = ? AND status = 'held'`
+  )
+    .bind(seatId)
+    .run();
+  if (!claim.meta.changes) {
+    return Response.json({ error: "seat is not being held for a booking" }, { status: 409 });
+  }
+
   const booking = await env.DB.prepare(`SELECT * FROM bookings WHERE id = ?`)
     .bind(seat.held_booking_id)
     .first();

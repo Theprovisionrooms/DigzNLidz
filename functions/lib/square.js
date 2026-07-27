@@ -49,6 +49,31 @@ export async function listMenuItems(env) {
     .filter(Boolean);
 }
 
+// Same fallback menu used by /api/config, kept here too so order endpoints
+// can price-check against it without importing from functions/api (Pages
+// Functions routes aren't meant to be imported from each other).
+const FALLBACK_MENU = [
+  { id: "squash", name: "Squash", pricePence: 150 },
+  { id: "crisps", name: "Crisps", pricePence: 150 },
+  { id: "hotdog", name: "Hot Dog", pricePence: 400 },
+];
+
+// The single source of truth for "what can be ordered and what it costs".
+// /api/config uses this for display, and seats/[id]/order.js and
+// tables/[id]/order.js use it again to re-price whatever the browser
+// submits, so a tampered request body can never change what's actually
+// charged. Never trust a client-supplied price, same rule bookings/index.js
+// already follows for session pricing, this just applies it to food too.
+export async function getMenu(env) {
+  try {
+    const catalogMenu = await listMenuItems(env);
+    if (catalogMenu.length > 0) return catalogMenu;
+  } catch (e) {
+    console.error("Square catalog fetch failed, using fallback menu", e);
+  }
+  return FALLBACK_MENU;
+}
+
 
 // corporate payment links sent once staff confirm an enquiry.
 export async function createPaymentLink(env, { amountPence, reference, description, redirectUrl }) {

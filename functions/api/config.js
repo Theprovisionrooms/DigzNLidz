@@ -3,7 +3,7 @@
 // response is readable by anyone who loads the seat page.
 
 import { getSettings } from "../lib/settings.js";
-import { listMenuItems } from "../lib/square.js";
+import { getMenu } from "../lib/square.js";
 
 // Confirmed by Jordan. Keyed by JS Date.getDay(): 0 Sun, 1 Mon ... 6 Sat.
 // Monday and Tuesday aren't listed here at all, meaning closed.
@@ -15,14 +15,6 @@ export const BUSINESS_HOURS = {
   6: { open: "11:00", close: "20:00" }, // Saturday
 };
 
-// Falls back to this if Square's catalog can't be reached (not configured
-// yet, API hiccup, whatever). Ordering should never break because of it.
-const FALLBACK_MENU = [
-  { id: "squash", name: "Squash", pricePence: 150 },
-  { id: "crisps", name: "Crisps", pricePence: 150 },
-  { id: "hotdog", name: "Hot Dog", pricePence: 400 },
-];
-
 export async function onRequestGet({ env }) {
   const settings = await getSettings(env.DB, [
     "tier_1_name", "tier_1_minutes", "tier_1_price_pence",
@@ -31,13 +23,10 @@ export async function onRequestGet({ env }) {
     "extension_minutes", "extension_price_pence",
   ]);
 
-  let menu = FALLBACK_MENU;
-  try {
-    const catalogMenu = await listMenuItems(env);
-    if (catalogMenu.length > 0) menu = catalogMenu;
-  } catch (e) {
-    console.error("Square catalog fetch failed, using fallback menu", e);
-  }
+  // Same source seats/[id]/order.js and tables/[id]/order.js re-price
+  // against, so what's shown here always matches what can actually be
+  // charged.
+  const menu = await getMenu(env);
 
   return Response.json({
     squareApplicationId: env.SQUARE_APPLICATION_ID,

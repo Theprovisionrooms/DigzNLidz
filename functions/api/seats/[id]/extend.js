@@ -9,6 +9,7 @@
 // gets saved here instead.
 
 import { getExtensionConfig } from "../../../lib/settings.js";
+import { getSeatAvailability } from "../../../lib/capacity.js";
 import {
   chargeSourceId,
   chargeCardOnFile,
@@ -24,6 +25,22 @@ export async function onRequestPost({ params, request, env }) {
   const seat = await env.DB.prepare(`SELECT * FROM seats WHERE id = ?`).bind(seatId).first();
   if (!seat || !seat.current_session_id) {
     return Response.json({ error: "no active session on this seat" }, { status: 404 });
+  }
+
+  // If seats are already tight for a paid booking due within the next
+  // hour (same reservation math next-free.js uses to steer walk-ins away
+  // from those seats), don't let this one quietly keep running past that
+  // point. This seat is occupied, not free, so it isn't counted in
+  // "available" itself, negative or zero just means every other free
+  // seat is already spoken for.
+  const { available } = await getSeatAvailability(env.DB);
+  if (available <= 0) {
+    return Response.json(
+      {
+        error: "We need this seat back shortly for a booking that's due in, a member of staff can help if you'd like to stay longer.",
+      },
+      { status: 409 }
+    );
   }
 
   const session = await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`)

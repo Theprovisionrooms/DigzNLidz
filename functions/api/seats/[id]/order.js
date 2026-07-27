@@ -11,14 +11,37 @@ import {
   chargeCardOnFile,
   createCustomer,
   saveCardFromPayment,
+  getMenu,
 } from "../../../lib/square.js";
 
 export async function onRequestPost({ params, request, env }) {
   const seatId = params.id;
   const body = await request.json();
-  const { items, sourceId } = body; // items: [{ name, quantity, pricePence }]
+  const { items, sourceId } = body; // items: [{ id, quantity }], anything else from the client is ignored
 
   if (!Array.isArray(items) || items.length === 0) {
+    return Response.json({ error: "items required" }, { status: 400 });
+  }
+
+  // Re-price every line against the live menu (Square catalog, or the
+  // fallback if Square's unreachable). The client only tells us which
+  // item and how many, never what it costs, so a tampered request body
+  // can't change what actually gets charged.
+  const menu = await getMenu(env);
+  const menuById = new Map(menu.map((m) => [m.id, m]));
+
+  const cleanItems = [];
+  for (const requested of items) {
+    const menuItem = menuById.get(requested.id);
+    if (!menuItem) {
+      return Response.json({ error: `unknown item: ${requested.id}` }, { status: 400 });
+    }
+    const quantity = Math.max(0, Math.floor(Number(requested.quantity) || 0));
+    if (quantity === 0) continue;
+    cleanItems.push({ name: menuItem.name, quantity, pricePence: menuItem.pricePence });
+  }
+
+  if (cleanItems.length === 0) {
     return Response.json({ error: "items required" }, { status: 400 });
   }
 
@@ -30,7 +53,7 @@ export async function onRequestPost({ params, request, env }) {
     ? await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`).bind(seat.current_session_id).first()
     : null;
 
-  const totalPence = items.reduce((sum, item) => sum + item.pricePence * item.quantity, 0);
+  const totalPence = cleanItems.reduce((sum, item) => sum + item.pricePence * item.quantity, 0);
 
   let payment;
   let customerId = session?.square_customer_id || null;
@@ -79,7 +102,7 @@ export async function onRequestPost({ params, request, env }) {
     `INSERT INTO orders (seat_id, session_id, items_json, total_pence, square_order_id)
      VALUES (?, ?, ?, ?, ?)`
   )
-    .bind(seatId, seat?.current_session_id || null, JSON.stringify(items), totalPence, payment.providerRef)
+    .bind(seatId, seat?.current_session_id || null, JSON.stringify(cleanItems), totalPence, payment.providerRef)
     .run();
 
   return Response.json({ orderId: insert.meta.last_row_id, status: "placed" });
