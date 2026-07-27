@@ -178,8 +178,14 @@ const TIER_LABELS = { tier_1: "15min", tier_2: "30min", tier_3: "60min" };
 
 function renderHoldPanel(bookings) {
   const list = document.getElementById("hold-list");
+  const summaryEl = document.getElementById("bookings-today-summary");
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const totalGuests = bookings.reduce((sum, b) => sum + (Number(b.party_size) || 0), 0);
+  summaryEl.textContent = bookings.length
+    ? `${bookings.length} booking${bookings.length === 1 ? "" : "s"} today \u00b7 ${totalGuests} guest${totalGuests === 1 ? "" : "s"} total`
+    : "No bookings today";
 
   const upcoming = bookings
     .map((b) => {
@@ -192,7 +198,7 @@ function renderHoldPanel(bookings) {
     .sort((a, b) => a.slotMinutes - b.slotMinutes);
 
   if (upcoming.length === 0) {
-    list.innerHTML = `<p style="font-size:13px;opacity:0.7;margin:0;">Nothing left to hold for today.</p>`;
+    list.innerHTML = `<p style="font-size:13px;opacity:0.7;margin:0;">Nothing left today.</p>`;
     return;
   }
 
