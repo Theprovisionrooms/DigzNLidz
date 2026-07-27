@@ -17,12 +17,22 @@ export async function onRequestPost({ request, env }) {
 
   let campaignId = null;
   if (campaignName) {
-    const insert = await env.DB.prepare(
-      `INSERT INTO campaigns (name, type, sent_at) VALUES (?, 'promo', datetime('now'))`
+    const existingCampaign = await env.DB.prepare(
+      `SELECT id FROM campaigns WHERE name = ? AND type = 'promo'`
     )
       .bind(campaignName)
-      .run();
-    campaignId = insert.meta.last_row_id;
+      .first();
+
+    if (existingCampaign) {
+      campaignId = existingCampaign.id;
+    } else {
+      const insert = await env.DB.prepare(
+        `INSERT INTO campaigns (name, type, sent_at) VALUES (?, 'promo', datetime('now'))`
+      )
+        .bind(campaignName)
+        .run();
+      campaignId = insert.meta.last_row_id;
+    }
   }
 
   await env.DB.prepare(

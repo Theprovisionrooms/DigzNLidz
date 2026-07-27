@@ -38,9 +38,10 @@ export async function onRequestPost({ request, env }) {
     const booking = await env.DB.prepare(`SELECT * FROM bookings WHERE id = ?`).bind(refId).first();
     if (booking && booking.payment_status !== "paid") {
       await env.DB.prepare(`UPDATE bookings SET payment_status = 'paid' WHERE id = ?`).bind(refId).run();
-      await env.DB.prepare(
-        `INSERT INTO mailing_list (email, source) VALUES (?, 'booking') ON CONFLICT(email) DO NOTHING`
-      ).bind(booking.email).run();
+      // Mailing list opt-in happens client-side (see book.js), gated on
+      // the marketing consent checkbox, so nothing gets added here. This
+      // used to insert unconditionally, which meant every paying customer
+      // got added regardless of whether they'd ticked the box.
       await sendEmail(env, {
         to: booking.email,
         subject: "Your Digz N' Lidz booking is confirmed",
