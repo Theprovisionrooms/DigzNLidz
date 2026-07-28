@@ -10,6 +10,14 @@ let squarePayments = null;
 let pollTimer = null;
 let currentSession = null;
 
+// True while a Square card form is mounted and waiting on the customer,
+// i.e. the tier picker's payment step, an extension charge, or an order
+// with no card on file yet. refresh() skips re-rendering while this is
+// true so the 5-second poll can't blow away a card form mid-entry, that
+// used to happen if someone took more than 5 seconds to type their card
+// details, the whole screen would get wiped from under them.
+let cardFormActive = false;
+
 async function loadSquareSdk(env) {
   return new Promise((resolve, reject) => {
     const src = env === "production"
@@ -43,6 +51,7 @@ async function refresh() {
   const res = await fetch(`/api/seats/${seatId}`);
   const data = await res.json();
   currentSession = data.session;
+  if (cardFormActive) return; // don't tear down an open card form while someone's using it
   render(data);
 }
 
@@ -284,8 +293,14 @@ async function collectCardAndSubmit(onToken, amountPence) {
   payBtn.textContent = "Pay";
   container.after(payBtn);
 
+  cardFormActive = true;
+
   return new Promise((resolve, reject) => {
     payBtn.addEventListener("click", async () => {
+      // They've committed to paying now, safe for background polling to
+      // resume, whatever it triggers will only run in the background
+      // while "Processing..." is showing.
+      cardFormActive = false;
       payBtn.disabled = true;
       payBtn.textContent = "Processing...";
       try {
@@ -300,6 +315,8 @@ async function collectCardAndSubmit(onToken, amountPence) {
         await onToken(result.token);
         resolve();
       } catch (e) {
+        // Failed, the card form is still showing for a retry, protect it again.
+        cardFormActive = true;
         payBtn.disabled = false;
         payBtn.textContent = "Pay";
         reject(e);
@@ -320,7 +337,7 @@ function renderMenu() {
       <div>${item.name} · £${(item.pricePence / 100).toFixed(2)}</div>
       <div class="qty-controls">
         <button data-item="${item.id}" data-dir="-1">-</button>
-        <span id="qty-${item.id}">0</span>
+        <span id="qty-${item.id}">${cart[item.id] || 0}</span>
         <button data-item="${item.id}" data-dir="1">+</button>
       </div>
     </div>
@@ -376,8 +393,13 @@ function bindMenuHandlers() {
           const err = await res.json();
           throw new Error(err.error || "Order failed");
         }
+        for (const key in cart) cart[key] = 0;
         errorEl.style.color = "var(--yellow)";
         errorEl.textContent = "Order placed, on its way!";
+        app.innerHTML = renderMenu();
+        bindMenuHandlers();
+        document.getElementById("order-error").style.color = "var(--yellow)";
+        document.getElementById("order-error").textContent = "Order placed, on its way!";
       } else {
         const orderContainer = document.getElementById("order-container");
         orderContainer.id = "card-container"; // reuse card mount point
@@ -391,9 +413,15 @@ function bindMenuHandlers() {
             const err = await res.json();
             throw new Error(err.error || "Order failed");
           }
-          errorEl.style.color = "var(--yellow)";
-          errorEl.textContent = "Order placed, on its way!";
+          for (const key in cart) cart[key] = 0;
         }, totalPence);
+        // A card was saved on file by this order (see order.js), so from
+        // here on refresh() will pick up cardOnFile=true and future
+        // orders skip straight to the fast path above.
+        app.innerHTML = renderMenu();
+        bindMenuHandlers();
+        document.getElementById("order-error").style.color = "var(--yellow)";
+        document.getElementById("order-error").textContent = "Order placed, on its way!";
       }
     } catch (e) {
       errorEl.textContent = e.message;

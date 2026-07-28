@@ -1,14 +1,15 @@
 // POST /api/dashboard/campaigns/send
 // Staff-facing. Sends a one-off email to a chosen segment: either a party
 // type (single/couple/family/group, stored as a tag on the subscriber at
-// signup) or one of two computed segments worked out fresh from booking
+// signup) or one of three computed segments worked out fresh from booking
 // history each time this runs, rather than a tag that would go stale:
 //   - new_customer: exactly one paid booking on record, ever
+//   - returning: two or more paid bookings, ever (the "just came back,
+//     let's actually hook them" moment)
 //   - lapsed: at least one paid booking, but the most recent one was more
 //     than LAPSED_DAYS ago
-// Both computed segments are still scoped to the mailing list, someone
-// has to have opted in to get an email regardless of which segment
-// they're in.
+// All three are still scoped to the mailing list, someone has to have
+// opted in to get an email regardless of which segment they're in.
 //
 // Resend's free tier caps at 100 emails/day. This checks how many have
 // already gone out today across all campaigns and only sends up to
@@ -23,7 +24,7 @@ const DAILY_SEND_CAP = 100; // Resend free tier
 const LAPSED_DAYS = 90;
 
 async function getSegmentRecipients(db, tag) {
-  if (tag === "new_customer") {
+  if (tag === "new_customer" || tag === "returning") {
     const { results } = await db.prepare(
       `SELECT ml.email FROM mailing_list ml
        JOIN (
@@ -32,7 +33,7 @@ async function getSegmentRecipients(db, tag) {
          WHERE payment_status = 'paid'
          GROUP BY email
        ) b ON b.email = ml.email
-       WHERE b.booking_count = 1`
+       WHERE ${tag === "new_customer" ? "b.booking_count = 1" : "b.booking_count >= 2"}`
     ).all();
     return results;
   }
@@ -81,13 +82,15 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: `no subscribers in segment "${tag}"` }, { status: 400 });
   }
 
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
+  // sent_at is stamped by SQLite's own datetime('now') default
+  // ("YYYY-MM-DD HH:MM:SS"). A JS toISOString() cutoff uses a "T"
+  // separator instead of a space, which silently undercounts same-day
+  // rows (space sorts before "T"), so this cap was effectively not being
+  // enforced. date('now') as a plain "YYYY-MM-DD" is a valid prefix
+  // comparison against the SQLite format instead.
   const { results: sentTodayRows } = await env.DB.prepare(
-    `SELECT COUNT(*) as n FROM campaign_sends WHERE sent_at >= ?`
-  )
-    .bind(todayStart.toISOString())
-    .all();
+    `SELECT COUNT(*) as n FROM campaign_sends WHERE sent_at >= date('now')`
+  ).all();
   const sentToday = sentTodayRows[0]?.n || 0;
   const remaining = DAILY_SEND_CAP - sentToday;
 

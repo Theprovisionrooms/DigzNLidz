@@ -88,11 +88,12 @@ export async function onRequestPost({ params, request, env }) {
 
   await env.DB.prepare(
     `UPDATE sessions
-     SET ends_at = ?, extensions_count = extensions_count + 1, status = 'active',
+     SET ends_at = ?, extensions_count = extensions_count + 1,
+         extensions_revenue_pence = extensions_revenue_pence + ?, status = 'active',
          square_customer_id = ?, square_card_id = ?
      WHERE id = ?`
   )
-    .bind(newEndsAt.toISOString(), customerId, cardId, session.id)
+    .bind(newEndsAt.toISOString(), extension.pricePence, customerId, cardId, session.id)
     .run();
 
   await env.DB.prepare(`UPDATE seats SET status = 'active' WHERE id = ?`).bind(seatId).run();

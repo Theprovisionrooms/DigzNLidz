@@ -10,7 +10,6 @@ export async function onRequestGet({ request, env }) {
 
   const db = env.DB;
   const today = new Date().toISOString().slice(0, 10);
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     bookingsToday,
@@ -18,7 +17,7 @@ export async function onRequestGet({ request, env }) {
     bookingsWeek,
     bookingRevenue,
     orderRevenue,
-    extensionCount,
+    extensionRevenue,
     seats,
     pendingCorporate,
     mailingListCount,
@@ -33,10 +32,18 @@ export async function onRequestGet({ request, env }) {
       `SELECT id, name, type, party_size, slot_time, payment_status, tier_breakdown_json, tier_redeemed_json
        FROM bookings WHERE booking_date = ? ORDER BY slot_time ASC`
     ).bind(today).all(),
-    db.prepare(`SELECT COUNT(*) as n FROM bookings WHERE created_at >= ?`).bind(weekAgo).first(),
+    // created_at is SQLite's own datetime('now') default ("YYYY-MM-DD
+    // HH:MM:SS"), so the cutoff needs to be computed by SQLite too, a JS
+    // toISOString() string uses a "T" separator instead of a space and
+    // silently fails to match on same-day comparisons (space sorts before
+    // "T", so "today, spot on 7 days ago" could look earlier than it is).
+    db.prepare(`SELECT COUNT(*) as n FROM bookings WHERE created_at >= datetime('now', '-7 days')`).first(),
     db.prepare(`SELECT COALESCE(SUM(total_amount_pence),0) as total FROM bookings WHERE payment_status = 'paid'`).first(),
     db.prepare(`SELECT COALESCE(SUM(total_pence),0) as total FROM orders`).first(),
-    db.prepare(`SELECT COALESCE(SUM(extensions_count),0) as total FROM sessions`).first(),
+    // Actual amount charged for extensions, recorded per session at the
+    // time each one was charged, not (count * today's price), which used
+    // to silently misreport history any time the price setting changed.
+    db.prepare(`SELECT COALESCE(SUM(extensions_revenue_pence),0) as total FROM sessions`).first(),
     db.prepare(`SELECT * FROM seats ORDER BY id`).all(),
     db.prepare(`SELECT * FROM corporate_enquiries WHERE status = 'new' ORDER BY created_at DESC`).all(),
     db.prepare(`SELECT COUNT(*) as n FROM mailing_list`).first(),
@@ -61,11 +68,6 @@ export async function onRequestGet({ request, env }) {
     ).all(),
   ]);
 
-  const extensionRevenue = await db
-    .prepare(`SELECT value FROM settings WHERE key = 'extension_price_pence'`)
-    .first();
-  const extensionPricePence = Number(extensionRevenue?.value || 0);
-
   const segmentCounts = {};
   for (const row of mailingListBySegment.results) {
     for (const tag of row.tags.split(",").map((t) => t.trim()).filter(Boolean)) {
@@ -83,7 +85,7 @@ export async function onRequestGet({ request, env }) {
     revenue: {
       bookingsPence: bookingRevenue.total,
       foodDrinkPence: orderRevenue.total,
-      extensionsPence: extensionCount.total * extensionPricePence,
+      extensionsPence: extensionRevenue.total,
     },
     seats: seats.results,
     pendingCorporateEnquiries: pendingCorporate.results,
