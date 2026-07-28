@@ -346,3 +346,64 @@ textarea.field {
 .social-line a:hover {
   color: var(--yellow);
 }
+
+/* ---------- Mini map (address / find us) ----------
+   A hand-drawn stylised map, not a live embed of any third-party map
+   service, no external script or tile loading involved. Just enough of
+   a street layout to place the pin and give a sense of location. */
+.mini-map-card {
+  background: var(--panel);
+  border: 1px solid #3a3530;
+  border-left: 4px solid var(--yellow);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mini-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid #3a3530;
+}
+
+.mini-map-info {
+  padding: 20px;
+}
+
+.mini-map-info h3 {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--yellow);
+  margin: 0 0 10px;
+  font-size: 19px;
+}
+
+.mini-map-address {
+  color: var(--bone);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+.mini-map-note {
+  color: var(--bone);
+  opacity: 0.65;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.mini-map-directions {
+  display: inline-block;
+  color: var(--yellow);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.mini-map-directions:hover {
+  text-decoration: underline;
+}
