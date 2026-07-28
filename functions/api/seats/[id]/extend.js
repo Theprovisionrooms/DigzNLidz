@@ -84,7 +84,16 @@ export async function onRequestPost({ params, request, env }) {
     return Response.json({ error: "payment not completed" }, { status: 402 });
   }
 
-  const newEndsAt = new Date(new Date(session.ends_at).getTime() + extension.minutes * 60 * 1000);
+  // Base the new end time on whichever's later: the old ends_at (if the
+  // session was somehow still running) or right now. A session that's
+  // already timed out (status was "awaiting_extension") has an ends_at
+  // in the past, if this used that stale value directly, the guest
+  // would lose however long they took to tap "extend" out of the
+  // minutes they just paid for, and on a long enough delay the new
+  // session could already show as expired again the moment it starts.
+  const newEndsAt = new Date(
+    Math.max(new Date(session.ends_at).getTime(), Date.now()) + extension.minutes * 60 * 1000
+  );
 
   await env.DB.prepare(
     `UPDATE sessions
