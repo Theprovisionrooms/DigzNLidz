@@ -176,6 +176,22 @@ async function sendCampaign() {
 // nobody misses that a family or group needs seats held for them.
 const TIER_LABELS = { tier_1: "15min", tier_2: "30min", tier_3: "60min" };
 
+// Matches NO_SHOW_GRACE_MINUTES in workers/session-expiry-cron.js: how
+// long past the slot a held seat waits before it's released back to
+// free. Once a booking's past this, its seat may well have gone to a
+// walk-in in the meantime, that's fine, they've already paid, staff
+// just need to sit them wherever's next free rather than the seat
+// that happened to hold their tier originally.
+const NO_SHOW_GRACE_MINUTES = 10;
+
+function remainingSeats(breakdown, redeemed) {
+  return Object.keys(TIER_LABELS).reduce((sum, tier) => {
+    const paidFor = Number(breakdown[tier]) || 0;
+    const done = Number(redeemed[tier]) || 0;
+    return sum + Math.max(0, paidFor - done);
+  }, 0);
+}
+
 function renderHoldPanel(bookings) {
   const list = document.getElementById("hold-list");
   const summaryEl = document.getElementById("bookings-today-summary");
@@ -190,11 +206,20 @@ function renderHoldPanel(bookings) {
   const upcoming = bookings
     .map((b) => {
       const [h, m] = b.slot_time.split(":").map(Number);
-      return { ...b, slotMinutes: h * 60 + m };
+      const breakdown = JSON.parse(b.tier_breakdown_json || "{}");
+      const redeemed = JSON.parse(b.tier_redeemed_json || "{}");
+      return { ...b, slotMinutes: h * 60 + m, breakdown, redeemed };
     })
-    // Keep anything not more than 30 minutes past its slot, in case
-    // they're running a little late, drop it once it's clearly over.
-    .filter((b) => b.slotMinutes >= nowMinutes - 30)
+    .filter((b) => {
+      // Anything not more than 30 minutes past its slot stays visible in
+      // case they're running a little late. Past that, a paid booking
+      // with seats still unredeemed never drops off the list, however
+      // late, since they've paid and staff still need to seat them the
+      // moment something's free, dropping them here would just mean
+      // someone has to remember to go looking manually instead.
+      if (b.slotMinutes >= nowMinutes - 30) return true;
+      return b.payment_status === "paid" && remainingSeats(b.breakdown, b.redeemed) > 0;
+    })
     .sort((a, b) => a.slotMinutes - b.slotMinutes);
 
   if (upcoming.length === 0) {
@@ -204,13 +229,15 @@ function renderHoldPanel(bookings) {
 
   list.innerHTML = upcoming.map((b) => {
     const urgent = b.slotMinutes - nowMinutes <= 60;
-    const breakdown = JSON.parse(b.tier_breakdown_json || "{}");
-    const redeemed = JSON.parse(b.tier_redeemed_json || "{}");
     const notPaid = b.payment_status !== "paid";
+    // Past the no-show grace period with seats still unredeemed, their
+    // hold's likely gone to a walk-in by now. Not a problem, just means
+    // staff are sitting them fresh rather than on the original seat.
+    const late = !notPaid && nowMinutes > b.slotMinutes + NO_SHOW_GRACE_MINUTES && remainingSeats(b.breakdown, b.redeemed) > 0;
 
     const tierButtons = Object.keys(TIER_LABELS).map((tier) => {
-      const paidFor = Number(breakdown[tier]) || 0;
-      const done = Number(redeemed[tier]) || 0;
+      const paidFor = Number(b.breakdown[tier]) || 0;
+      const done = Number(b.redeemed[tier]) || 0;
       if (paidFor === 0) return "";
       const remaining = paidFor - done;
       return `<button
@@ -221,9 +248,9 @@ function renderHoldPanel(bookings) {
     }).join("");
 
     return `
-      <div class="hold-row ${urgent ? "urgent" : ""}" style="flex-direction:column;align-items:flex-start;gap:4px;">
+      <div class="hold-row ${urgent ? "urgent" : ""} ${late ? "late" : ""}" style="flex-direction:column;align-items:flex-start;gap:4px;">
         <div style="display:flex;justify-content:space-between;width:100%;">
-          <span>${b.slot_time} &middot; ${b.name} (${b.type})</span>
+          <span>${b.slot_time} &middot; ${b.name} (${b.type})${late ? ' <span class="late-tag">Late, seat any free spot</span>' : ""}</span>
           <span class="seats-needed">${b.party_size || "?"} seats ${notPaid ? "&middot; unpaid" : ""}</span>
         </div>
         <div>${tierButtons}</div>

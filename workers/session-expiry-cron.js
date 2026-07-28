@@ -20,7 +20,7 @@ const HOLD_LEAD_MINUTES = 20;
 
 // How long after the slot time a held seat waits for a scan before it's
 // treated as a no-show and released back to free.
-const NO_SHOW_GRACE_MINUTES = 5;
+const NO_SHOW_GRACE_MINUTES = 10;
 
 const TIERS = ["tier_1", "tier_2", "tier_3"];
 
