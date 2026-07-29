@@ -9,3 +9,6 @@ crons = ["* * * * *"]
 binding = "DB"
 database_name = "digznlidz-db"
 database_id = "ed184220-8583-4633-9d47-ea653402f93e"
+
+[vars]
+EMAIL_FROM = "Digz N' Lidz <bookings@digznlidz.co.uk>"
