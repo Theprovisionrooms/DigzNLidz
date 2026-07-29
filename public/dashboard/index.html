@@ -144,10 +144,22 @@
         <div id="orders-list"></div>
       </div>
 
-      <details class="card">
+      <details class="card" open>
         <summary style="cursor:pointer;"><h2 style="display:inline;">Corporate enquiries awaiting confirmation</h2></summary>
         <div id="corporate-list" style="margin-top:12px;"></div>
       </details>
+
+      <details class="card">
+        <summary style="cursor:pointer;"><h2 style="display:inline;">Upcoming corporate events</h2></summary>
+        <div id="upcoming-corporate-list" style="margin-top:12px;"></div>
+      </details>
+
+      <div class="card">
+        <h2>Seat a walk-in group</h2>
+        <p style="font-size:13px;"><small>If a group's phone signal is patchy or they'd rather staff sort it, open this on the counter tablet, same flow the guest would use, just run through it with them.</small></p>
+        <input type="number" id="staff-group-size" value="2" min="2" max="16" style="width:100%;padding:8px;margin:6px 0;">
+        <button id="staff-group-open" class="secondary">Open group seating</button>
+      </div>
 
       <div class="card">
         <h2>Discount codes</h2>

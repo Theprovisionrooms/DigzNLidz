@@ -61,3 +61,31 @@ export async function getSeatAvailability(db) {
     available: freeSeats.length - reserved,
   };
 }
+
+// Rough wait estimate for a walk-in group bigger than what's free right
+// now. Looks at the soonest-ending active sessions, since a seat is only
+// actually usable by the group once it's ended, and takes the Nth
+// soonest end time, where N is how many more seats the group still
+// needs. Deliberately approximate, this ignores the reserved-for-bookings
+// logic in getSeatAvailability above, it's a "roughly how long" figure
+// for the guest waiting at the counter, not a guarantee.
+export async function getGroupWaitEstimate(db, stillNeeded) {
+  if (stillNeeded <= 0) return 0;
+
+  const { results } = await db.prepare(
+    `SELECT ends_at FROM sessions WHERE status = 'active' ORDER BY ends_at ASC LIMIT ?`
+  )
+    .bind(stillNeeded)
+    .all();
+
+  if (results.length < stillNeeded) {
+    // Not even enough active sessions to free up that many seats, at
+    // this point it's not really a "wait", it's "come back later" or
+    // "ask staff", so don't pretend to give a precise number.
+    return null;
+  }
+
+  const nthEndsAt = new Date(results[results.length - 1].ends_at).getTime();
+  const waitMs = nthEndsAt - Date.now();
+  return Math.max(1, Math.ceil(waitMs / 60000));
+}

@@ -20,6 +20,7 @@ export async function onRequestGet({ request, env }) {
     extensionRevenue,
     seats,
     pendingCorporate,
+    acceptedCorporate,
     mailingListCount,
     mailingListTrend,
     mailingListBySegment,
@@ -46,6 +47,13 @@ export async function onRequestGet({ request, env }) {
     db.prepare(`SELECT COALESCE(SUM(extensions_revenue_pence),0) as total FROM sessions`).first(),
     db.prepare(`SELECT * FROM seats ORDER BY id`).all(),
     db.prepare(`SELECT * FROM corporate_enquiries WHERE status = 'new' ORDER BY created_at DESC`).all(),
+    // Accepted and confirmed both mean "this event is happening", just via
+    // different payment routes (cash on site vs a Square link). Shown
+    // together so staff can see everything actually coming up, not just
+    // the ones still waiting on a first response.
+    db.prepare(
+      `SELECT * FROM corporate_enquiries WHERE status IN ('accepted', 'confirmed') ORDER BY event_date ASC`
+    ).all(),
     db.prepare(`SELECT COUNT(*) as n FROM mailing_list`).first(),
     // Weekly signup counts, last 8 weeks, newest first.
     db.prepare(
@@ -89,6 +97,7 @@ export async function onRequestGet({ request, env }) {
     },
     seats: seats.results,
     pendingCorporateEnquiries: pendingCorporate.results,
+    upcomingCorporateEvents: acceptedCorporate.results,
     mailingListCount: mailingListCount.n,
     mailingListTrend: mailingListTrend.results.reverse(),
     mailingListSegments,

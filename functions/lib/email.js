@@ -1,6 +1,6 @@
 // Thin wrapper around Resend's API for transactional email.
 
-export async function sendEmail(env, { to, subject, html }) {
+export async function sendEmail(env, { to, subject, html, replyTo }) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -12,6 +12,7 @@ export async function sendEmail(env, { to, subject, html }) {
       to,
       subject,
       html,
+      ...(replyTo ? { reply_to: replyTo } : {}),
     }),
   });
   if (!res.ok) {

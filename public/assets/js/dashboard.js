@@ -5,6 +5,10 @@ document.getElementById("login-btn").addEventListener("click", login);
 document.getElementById("password").addEventListener("keydown", (e) => {
   if (e.key === "Enter") login();
 });
+document.getElementById("staff-group-open").addEventListener("click", () => {
+  const size = Math.max(2, Math.min(16, Number(document.getElementById("staff-group-size").value) || 2));
+  window.open(`/group-start/?size=${size}`, "_blank");
+});
 
 async function login() {
   const password = document.getElementById("password").value;
@@ -367,8 +371,37 @@ function render(data) {
         <strong>${e.company_name || e.contact_name}</strong><br>
         <small>${e.contact_name} · ${e.email} · ${e.headcount || "?"} people · ${e.event_date || "date TBC"}</small>
         <p style="font-size:13px;">${e.event_details || ""}</p>
+
+        <p style="font-size:13px;color:var(--yellow);margin-bottom:4px;">Send a Square payment link:</p>
         <input type="number" placeholder="Deposit amount in pence" id="deposit-${e.id}" style="width:100%;padding:8px;margin:6px 0;">
         <button onclick="confirmEnquiry(${e.id})">Confirm & send payment link</button>
+
+        <p style="font-size:13px;color:var(--yellow);margin:10px 0 4px;">Or accept and take the deposit yourselves:</p>
+        <select id="deposit-method-${e.id}" style="width:100%;padding:8px;margin:6px 0;">
+          <option value="cash">Cash, taken in person</option>
+          <option value="card_on_site">Card, taken on our own machine</option>
+          <option value="none">No deposit needed</option>
+        </select>
+        <button onclick="acceptEnquiry(${e.id})" class="secondary">Accept event</button>
+        <button onclick="cancelEnquiry(${e.id})" class="secondary" style="background:transparent;">Can't do it</button>
+      </div>
+    `).join("");
+  }
+
+  const upcomingList = document.getElementById("upcoming-corporate-list");
+  if (!data.upcomingCorporateEvents || data.upcomingCorporateEvents.length === 0) {
+    upcomingList.innerHTML = `<p><small>Nothing upcoming.</small></p>`;
+  } else {
+    upcomingList.innerHTML = data.upcomingCorporateEvents.map((e) => `
+      <div class="card" style="background:#141414;">
+        <strong>${e.company_name || e.contact_name}</strong>
+        <span style="float:right;font-size:12px;color:var(--yellow);">${e.status === "confirmed" ? "Square link sent" : (e.deposit_method || "").replace("_", " ")}</span>
+        <br>
+        <small>${e.contact_name} · ${e.email} · ${e.headcount || "?"} people · ${e.event_date || "date TBC"}</small>
+        <div style="margin-top:8px;">
+          <button onclick="cancelEnquiry(${e.id})" class="secondary" style="width:auto;margin-right:6px;">Can't do it</button>
+          <button onclick="removeEnquiry(${e.id})" class="secondary" style="width:auto;background:transparent;">Remove (date's passed)</button>
+        </div>
       </div>
     `).join("");
   }
@@ -385,6 +418,42 @@ async function confirmEnquiry(id) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ depositPence }),
   });
+  if (!res.ok) {
+    const err = await res.json();
+    alert(err.error || "Something went wrong");
+    return;
+  }
+  loadDashboard();
+}
+
+async function acceptEnquiry(id) {
+  const depositMethod = document.getElementById(`deposit-method-${id}`).value;
+  const res = await fetch(`/api/corporate/${id}/accept`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ depositMethod }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    alert(err.error || "Something went wrong");
+    return;
+  }
+  loadDashboard();
+}
+
+async function cancelEnquiry(id) {
+  if (!confirm("Cancel this enquiry? It'll come off the active lists.")) return;
+  const res = await fetch(`/api/corporate/${id}/cancel`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json();
+    alert(err.error || "Something went wrong");
+    return;
+  }
+  loadDashboard();
+}
+
+async function removeEnquiry(id) {
+  const res = await fetch(`/api/corporate/${id}/remove`, { method: "POST" });
   if (!res.ok) {
     const err = await res.json();
     alert(err.error || "Something went wrong");
