@@ -74,7 +74,11 @@
 
   <header class="home-wrap home-topbar">
     <img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz RC Experience Cafe">
-    <nav>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-scrim" id="nav-scrim"></div>
+    <nav id="site-nav">
       <a href="/gallery/">Gallery</a>
       <a href="/faq/">FAQ</a>
       <a href="/blog/">Blog</a>
@@ -267,6 +271,32 @@
     <span>Sessions from £5</span>
     <span class="mobile-book-bar-btn">Book now &rarr;</span>
   </a>
+
+  <script>
+    // Mobile nav toggle. Closes on link click, scrim click, or Escape,
+    // so it never traps someone on a page they can't get off.
+    const navToggle = document.getElementById("nav-toggle");
+    const siteNav = document.getElementById("site-nav");
+    const navScrim = document.getElementById("nav-scrim");
+
+    function closeNav() {
+      navToggle.classList.remove("is-open");
+      navToggle.setAttribute("aria-expanded", "false");
+      siteNav.classList.remove("is-open");
+      navScrim.classList.remove("is-open");
+    }
+    function toggleNav() {
+      const opening = !siteNav.classList.contains("is-open");
+      navToggle.classList.toggle("is-open", opening);
+      navToggle.setAttribute("aria-expanded", String(opening));
+      siteNav.classList.toggle("is-open", opening);
+      navScrim.classList.toggle("is-open", opening);
+    }
+    navToggle.addEventListener("click", toggleNav);
+    navScrim.addEventListener("click", closeNav);
+    siteNav.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeNav));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeNav(); });
+  </script>
 
   <script>
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

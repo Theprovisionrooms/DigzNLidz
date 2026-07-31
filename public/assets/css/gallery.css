@@ -33,6 +33,16 @@
   opacity: 0;
   transform: translateY(16px) scale(0.97);
   transition: opacity 0.5s ease, transform 0.5s ease;
+  /* Reset: .gallery-item is a <button>, and base.css's global button
+     rule (width:100%, padding:14px, background, etc) plus iOS Safari's
+     own native button chrome both fight the grid layout otherwise, this
+     is what was making the grid not show up correctly on iPhone. */
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  font: inherit;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .gallery-item.is-visible {
@@ -122,6 +132,11 @@
   border-radius: 50%;
   width: 44px;
   height: 44px;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  -webkit-appearance: none;
+  appearance: none;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
