@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery | Digz N' Lidz</title>
+  <meta name="description" content="Photos from Digz N' Lidz RC Experience Cafe, the sandpit, the sessions, the birthdays, the digger disasters.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/gallery.css">
+</head>
+<body>
+  <img class="digger-float d3" src="/assets/img/diggers/digger-2.webp" alt="">
+
+  <div class="site-topbar">
+    <a href="/"><img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz"></a>
+    <a href="/" class="back">&larr; Home</a>
+  </div>
+
+  <div class="wrap gallery-wrap">
+    <span class="page-eyebrow">From The Pit</span>
+    <h1>Gallery</h1>
+    <p style="color:var(--bone);opacity:0.8;margin-top:-8px;">Photos from sessions, birthdays, and the odd digger disaster. Tap any photo for a closer look.</p>
+
+    <div id="gallery-grid" class="gallery-grid"></div>
+    <p id="gallery-empty" class="gallery-empty" hidden>No photos up yet, check back soon.</p>
+  </div>
+
+  <div id="lightbox" class="lightbox" hidden>
+    <button class="lightbox-close" id="lightbox-close" aria-label="Close">&times;</button>
+    <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
+    <img id="lightbox-img" src="" alt="">
+    <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Next photo">&rsaquo;</button>
+    <p id="lightbox-caption" class="lightbox-caption"></p>
+  </div>
+
+  <footer class="site-footer">Digz N' Lidz RC Experience Cafe</footer>
+
+  <script src="/assets/js/gallery.js"></script>
+</body>
+</html>
