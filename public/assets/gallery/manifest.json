@@ -1,3 +1,36 @@
 {
-  "photos": []
+  "photos": [
+    {
+      "file": "the-pit.jpg",
+      "caption": "the pit before the sand"
+    },
+    {
+      "file": "signs-up.jpg",
+      "caption": "front sign is up"
+    },
+    {
+      "file": "on-our-way.jpeg",
+      "caption": "cute selfie"
+    },
+    {
+      "file": "mural-begining.jpeg",
+      "caption": "the mural mid way"
+    },
+    {
+      "file": "first-podcast.jpeg",
+      "caption": "first podcast"
+    },
+    {
+      "file": "builders.jpeg",
+      "caption": "handmade frames"
+    },
+    {
+      "file": "beginings.jpeg",
+      "caption": "the start of the journey"
+    },
+    {
+      "file": "in-the-news.jpg",
+      "caption": "in the news"
+    }
+  ]
 }
