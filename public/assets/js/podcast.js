@@ -27,7 +27,8 @@ async function init() {
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .map((v) => `
       <div class="card">
-        ${v.image ? `<img src="${v.image}" alt="${v.imageAlt || v.title}" style="width:100%;border-radius:8px;margin-bottom:12px;">` : ""}
+        <h2>${v.title}</h2>
+        ${v.image ? `<img src="${v.image}" alt="${v.imageAlt || v.title}" style="width:100%;border-radius:8px;margin:8px 0 12px;">` : ""}
         <div class="video-embed">
           <iframe
             src="https://www.youtube.com/embed/${v.youtubeId}"
@@ -37,7 +38,6 @@ async function init() {
             allowfullscreen
           ></iframe>
         </div>
-        <h2>${v.title}</h2>
         <small style="color:#a89b87;">${formatDate(v.date)}</small>
       </div>
     `)
