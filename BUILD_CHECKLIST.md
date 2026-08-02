@@ -12,6 +12,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Square OAuth built (production requires it, not a static token, see functions/lib/square-oauth.js, functions/api/oauth/authorize.js + callback.js, migrations/0010_square_oauth.sql)
 - [ ] Square Application Secret added to Cloudflare env, and OAuth connected from /dashboard (one-time, staff clicks "Connect to Square")
 - [ ] Redirect URI added in the Square Developer Dashboard: https://digznlidz.co.uk/api/oauth/callback
+- [x] Public coming-soon gate added (functions/_middleware.js), site shows public/coming-soon.html to visitors while MAINTENANCE_MODE=true. /api/*, /dashboard, /assets/ still work as normal, needed for Danny's webhook + OAuth setup. Preview the real site with ?preview=<dashboard password> once, it sets a cookie. Flip MAINTENANCE_MODE to false in Cloudflare Production env vars to go live, no redeploy needed.
 - [ ] Branding assets received (logo files, photography, digger imagery direction)
 - [x] Tier names + pricing confirmed: 15 min £5, 30 min £10, 60 min £15 (migrations/0003_tier_pricing.sql)
 - [x] Corporate booking process signed off, Jordan's call, existing enquiry -> confirm -> payment link flow stands as built
