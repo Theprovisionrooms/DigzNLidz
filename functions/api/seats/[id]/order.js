@@ -59,31 +59,36 @@ export async function onRequestPost({ params, request, env }) {
   let customerId = session?.square_customer_id || null;
   let cardId = session?.square_card_id || null;
 
-  if (cardId) {
-    payment = await chargeCardOnFile(env, {
-      customerId,
-      cardId,
-      amountPence: totalPence,
-      reference: `seat:${seatId}:order`,
-    });
-  } else {
-    if (!sourceId) {
-      return Response.json({ error: "sourceId required" }, { status: 400 });
-    }
-    customerId = customerId || (await createCustomer(env, { referenceId: `seat-${seatId}-${Date.now()}` }));
-    payment = await chargeSourceId(env, {
-      sourceId,
-      amountPence: totalPence,
-      reference: `seat:${seatId}:order`,
-      customerId,
-    });
-    if (payment.status === "COMPLETED" || payment.status === "APPROVED") {
-      try {
-        cardId = await saveCardFromPayment(env, { paymentId: payment.providerRef, customerId });
-      } catch (e) {
-        console.error("saveCardFromPayment failed", e);
+  try {
+    if (cardId) {
+      payment = await chargeCardOnFile(env, {
+        customerId,
+        cardId,
+        amountPence: totalPence,
+        reference: `seat:${seatId}:order`,
+      });
+    } else {
+      if (!sourceId) {
+        return Response.json({ error: "sourceId required" }, { status: 400 });
+      }
+      customerId = customerId || (await createCustomer(env, { referenceId: `seat-${seatId}-${Date.now()}` }));
+      payment = await chargeSourceId(env, {
+        sourceId,
+        amountPence: totalPence,
+        reference: `seat:${seatId}:order`,
+        customerId,
+      });
+      if (payment.status === "COMPLETED" || payment.status === "APPROVED") {
+        try {
+          cardId = await saveCardFromPayment(env, { paymentId: payment.providerRef, customerId });
+        } catch (e) {
+          console.error("saveCardFromPayment failed", e);
+        }
       }
     }
+  } catch (e) {
+    console.error("Square charge failed (seat order)", e);
+    return Response.json({ error: `Payment couldn't be processed: ${e.message || "unknown error"}` }, { status: 502 });
   }
 
   if (payment.status !== "COMPLETED" && payment.status !== "APPROVED") {

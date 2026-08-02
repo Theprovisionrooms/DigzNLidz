@@ -44,13 +44,19 @@ export async function onRequestPost({ params, request, env }) {
 
   const totalPence = cleanItems.reduce((sum, item) => sum + item.pricePence * item.quantity, 0);
 
-  const customerId = await createCustomer(env, { referenceId: `table-${tableId}-${Date.now()}` });
-  const payment = await chargeSourceId(env, {
-    sourceId,
-    amountPence: totalPence,
-    reference: `table:${tableId}:order`,
-    customerId,
-  });
+  let customerId, payment;
+  try {
+    customerId = await createCustomer(env, { referenceId: `table-${tableId}-${Date.now()}` });
+    payment = await chargeSourceId(env, {
+      sourceId,
+      amountPence: totalPence,
+      reference: `table:${tableId}:order`,
+      customerId,
+    });
+  } catch (e) {
+    console.error("Square charge failed (table order)", e);
+    return Response.json({ error: `Payment couldn't be processed: ${e.message || "unknown error"}` }, { status: 502 });
+  }
 
   if (payment.status !== "COMPLETED" && payment.status !== "APPROVED") {
     return Response.json({ error: "payment not completed" }, { status: 402 });

@@ -75,7 +75,8 @@ export async function onRequestPost({ request, env }) {
       await env.DB.prepare(`UPDATE seats SET status = 'free' WHERE id = ?`).bind(seatId).run();
     }
     if (e && e.status) return Response.json({ error: e.error }, { status: e.status });
-    throw e;
+    console.error("Square charge failed (group start)", e);
+    return Response.json({ error: `Payment couldn't be processed: ${e.message || "unknown error"}` }, { status: 502 });
   }
 
   const startedAt = new Date();
