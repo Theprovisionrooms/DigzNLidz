@@ -1,0 +1,511 @@
+/* Digz N' Lidz brand: black, construction yellow, rust/sunset orange,
+   hazard stripe accents, industrial type. Pulled from their logo. */
+
+:root {
+  --site-black: #141414;
+  --panel: #1e1c19;
+  --yellow: #f0a91e;
+  --rust: #b3532c;
+  --bone: #efe6d8;
+  --hazard-dark: #1a1a1a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--site-black);
+  color: var(--bone);
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+  position: relative;
+}
+
+h1, h2 {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--yellow);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid #3a3530;
+  border-left: 4px solid var(--yellow);
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  background: var(--yellow);
+  color: var(--site-black);
+  border: none;
+  border-radius: 4px;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--bone);
+  border: 1px solid var(--bone);
+}
+
+.timer {
+  font-size: 48px;
+  color: var(--yellow);
+  text-align: center;
+  margin: 10px 0;
+}
+
+.tier-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #3a3530;
+}
+
+.tier-option:last-child { border-bottom: none; }
+
+.error {
+  color: #e0664a;
+  margin-top: 8px;
+}
+
+#card-container {
+  margin: 14px 0;
+  min-height: 40px;
+}
+
+.wallet-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wallet-btn {
+  min-height: 44px;
+}
+
+.apple-pay-btn {
+  background: #000;
+  color: #fff;
+  font-family: -apple-system, "SF Pro Text", "Arial", sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.wallet-divider {
+  text-align: center;
+  color: var(--bone);
+  opacity: 0.55;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 16px 0 10px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #3a3530;
+}
+
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qty-controls button {
+  width: 32px;
+  padding: 6px;
+  margin: 0;
+}
+
+/* Hazard stripe divider, matches the logo's yellow/black diagonal band */
+.hazard-divider {
+  height: 10px;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--yellow), var(--yellow) 12px,
+    var(--hazard-dark) 12px, var(--hazard-dark) 24px
+  );
+  margin: 0 0 20px;
+  border-radius: 2px;
+}
+
+.brand-logo {
+  display: block;
+  max-width: 220px;
+  margin: 0 auto 20px;
+}
+
+/* Floating digger PNGs, drift slowly in the background of a page.
+   Keep z-index below .card so they never sit over readable content. */
+.digger-float {
+  position: fixed;
+  opacity: 0.16;
+  z-index: 0;
+  pointer-events: none;
+  filter: grayscale(0.2);
+}
+
+.digger-float.d1 {
+  width: 260px;
+  top: 8%;
+  right: -60px;
+  animation: drift-1 22s ease-in-out infinite;
+}
+
+.digger-float.d2 {
+  width: 200px;
+  bottom: 6%;
+  left: -50px;
+  animation: drift-2 26s ease-in-out infinite;
+}
+
+.digger-float.d3 {
+  width: 180px;
+  top: 55%;
+  right: -40px;
+  animation: drift-3 30s ease-in-out infinite;
+}
+
+@keyframes drift-1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-25px) rotate(-2deg); }
+}
+
+@keyframes drift-2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(20px) rotate(2deg); }
+}
+
+@keyframes drift-3 {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-15px); }
+}
+
+@media (max-width: 600px) {
+  .digger-float { display: none; } /* keep small screens uncluttered */
+}
+
+/* Shared styled form fields, used on book/corporate/contact so those pages
+   can match the brand pass without inline styles everywhere. */
+.field-label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--yellow);
+  margin: 14px 0 6px;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+}
+
+.field {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--site-black);
+  border: 1px solid #3a3530;
+  border-radius: 4px;
+  color: var(--bone);
+  font-family: "Barlow", "Arial Narrow", sans-serif;
+  font-size: 15px;
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--yellow);
+}
+
+textarea.field {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* Lightweight page header/footer, reused on front-of-house pages that
+   aren't the homepage (book, corporate, contact, faq, blog, podcast). */
+.site-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 22px 20px 0;
+}
+
+.site-topbar img {
+  height: 34px;
+  width: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.site-topbar a.back {
+  color: var(--bone);
+  opacity: 0.7;
+  text-decoration: none;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.site-topbar a.back:hover { opacity: 1; }
+
+.page-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rust);
+  background: rgba(179, 83, 44, 0.12);
+  border: 1px solid rgba(179, 83, 44, 0.35);
+  padding: 4px 10px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+}
+
+.cookie-notice {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 200;
+  max-width: 520px;
+  margin: 0 auto;
+  background: #1a1a1a;
+  border: 1px solid var(--yellow);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+.cookie-notice p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--bone);
+  opacity: 0.85;
+  flex: 1 1 220px;
+}
+
+.cookie-notice a {
+  color: var(--yellow);
+}
+
+.cookie-notice button {
+  background: var(--yellow);
+  color: var(--site-black);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.site-footer {
+  text-align: center;
+  padding: 30px 0;
+  color: #8a8f94;
+  font-size: 12px;
+}
+
+.credit-line {
+  text-align: center;
+  padding: 0 0 24px;
+  color: #6a6f74;
+  font-size: 11px;
+}
+
+.credit-line a {
+  color: #8a8f94;
+  text-decoration: underline;
+}
+
+.credit-line a:hover {
+  color: var(--yellow);
+}
+
+.social-line {
+  text-align: center;
+  padding: 0 0 10px;
+  font-size: 12px;
+}
+
+.social-line a {
+  color: #8a8f94;
+  text-decoration: none;
+  margin: 0 8px;
+  letter-spacing: 0.03em;
+}
+
+.social-line a:hover {
+  color: var(--yellow);
+}
+
+/* ---------- Mini map (address / find us) ----------
+   A hand-drawn stylised map, not a live embed of any third-party map
+   service, no external script or tile loading involved. Just enough of
+   a street layout to place the pin and give a sense of location. */
+.mini-map-card {
+  background: var(--panel);
+  border: 1px solid #3a3530;
+  border-left: 4px solid var(--yellow);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mini-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid #3a3530;
+}
+
+.mini-map-info {
+  padding: 20px;
+}
+
+.mini-map-info h3 {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--yellow);
+  margin: 0 0 10px;
+  font-size: 19px;
+}
+
+.mini-map-address {
+  color: var(--bone);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+.mini-map-note {
+  color: var(--bone);
+  opacity: 0.65;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.mini-map-directions {
+  display: inline-block;
+  color: var(--yellow);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.mini-map-directions:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Video embed (16:9, responsive) ---------- */
+.video-embed {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.video-embed iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ---------- Blog feed (short updates, Facebook-page style) ---------- */
+.feed-post {
+  background: var(--panel);
+  border: 1px solid #3a3530;
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.feed-post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.feed-post-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--site-black);
+  border: 1px solid #3a3530;
+}
+
+.feed-post-name {
+  color: var(--yellow);
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.feed-post-date {
+  color: var(--bone);
+  opacity: 0.6;
+  font-size: 12px;
+}
+
+.feed-post-text {
+  color: var(--bone);
+  opacity: 0.9;
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.feed-post-image {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+  margin-top: 12px;
+}
