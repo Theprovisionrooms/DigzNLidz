@@ -47,6 +47,45 @@ async function loadDashboard() {
   render(data);
   loadDiscountCodes();
   loadOrders();
+  loadSquareStatus();
+}
+
+document.getElementById("square-connect-btn").addEventListener("click", () => {
+  window.location.href = "/api/oauth/authorize";
+});
+
+async function loadSquareStatus() {
+  const statusEl = document.getElementById("square-status-text");
+  const connectBtn = document.getElementById("square-connect-btn");
+
+  const res = await fetch("/api/dashboard/square-status");
+  if (!res.ok) {
+    statusEl.textContent = "Couldn't check Square connection status.";
+    return;
+  }
+  const data = await res.json();
+
+  if (data.mode === "sandbox") {
+    statusEl.textContent = "Sandbox mode, testing with the static access token, nothing to connect.";
+    connectBtn.style.display = "none";
+    return;
+  }
+
+  if (data.connected) {
+    const expires = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString("en-GB") : "unknown";
+    statusEl.textContent = `Connected to Square. Token refreshes automatically, currently valid until ${expires}.`;
+    connectBtn.style.display = "none";
+  } else {
+    statusEl.textContent = "Not connected to Square yet. Live payments won't work until this is done.";
+    connectBtn.style.display = "inline-block";
+  }
+}
+
+if (new URLSearchParams(window.location.search).get("square") === "connected") {
+  const notice = document.createElement("div");
+  notice.textContent = "Square connected successfully.";
+  notice.style.cssText = "background:#1f3d1f;color:#8ee08e;padding:10px;border-radius:6px;margin-bottom:12px;";
+  document.querySelector(".wrap").insertBefore(notice, document.querySelector(".wrap").children[1]);
 }
 
 async function loadOrders() {

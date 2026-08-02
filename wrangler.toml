@@ -21,10 +21,19 @@ binding = "digznlidz_assets"
 
 # Square + Resend keys go in Cloudflare Pages environment variables / secrets,
 # never committed here.
-# SQUARE_ACCESS_TOKEN
+# SQUARE_ACCESS_TOKEN        (sandbox only, production goes via OAuth, see functions/lib/square-oauth.js)
+# SQUARE_APPLICATION_SECRET  (production OAuth, from the app's Credentials page, keep private, unlike SQUARE_APPLICATION_ID above)
 # SQUARE_LOCATION_ID
 # SQUARE_WEBHOOK_SIGNATURE_KEY
 # SQUARE_ENV                ("sandbox" or "production")
 # RESEND_API_KEY
 # DASHBOARD_PASSWORD         (shared staff password for /dashboard)
 # DASHBOARD_SECRET           (random string used to sign session cookies)
+#
+# Square OAuth (production only): once SQUARE_APPLICATION_SECRET and
+# SQUARE_ENV=production are set, a staff member logs into /dashboard and
+# clicks "Connect to Square" once. Tokens are then stored in D1
+# (square_oauth table, migrations/0010_square_oauth.sql) and refreshed
+# automatically, no further manual steps. The app's redirect URI in the
+# Square Developer Dashboard must be set to:
+#   https://digznlidz.co.uk/api/oauth/callback

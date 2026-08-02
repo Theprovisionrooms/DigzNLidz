@@ -2,6 +2,8 @@
 // Raw fetch against Square's REST API rather than the Node SDK, since the SDK
 // is not built for the Workers runtime.
 
+import { getValidAccessToken } from "./square-oauth.js";
+
 const API_VERSION = "2025-01-23";
 
 function baseUrl(env) {
@@ -11,12 +13,17 @@ function baseUrl(env) {
 }
 
 async function squareFetch(env, path, options = {}) {
+  // Sandbox (testing): plain SQUARE_ACCESS_TOKEN env var, same as before.
+  // Production: the OAuth token connected via /api/oauth/authorize, auto
+  // refreshed. See functions/lib/square-oauth.js.
+  const accessToken = await getValidAccessToken(env);
+
   const res = await fetch(`${baseUrl(env)}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
       "Square-Version": API_VERSION,
-      "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
+      "Authorization": `Bearer ${accessToken}`,
       ...(options.headers || {}),
     },
   });

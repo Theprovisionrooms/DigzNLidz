@@ -9,6 +9,9 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 - [x] Domain confirmed, digznlidz.co.uk (to connect in Cloudflare Pages once live)
 - [x] Payment provider decided, Square (matches their existing till)
 - [ ] Square account access confirmed (API keys, sandbox access)
+- [x] Square OAuth built (production requires it, not a static token, see functions/lib/square-oauth.js, functions/api/oauth/authorize.js + callback.js, migrations/0010_square_oauth.sql)
+- [ ] Square Application Secret added to Cloudflare env, and OAuth connected from /dashboard (one-time, staff clicks "Connect to Square")
+- [ ] Redirect URI added in the Square Developer Dashboard: https://digznlidz.co.uk/api/oauth/callback
 - [ ] Branding assets received (logo files, photography, digger imagery direction)
 - [x] Tier names + pricing confirmed: 15 min £5, 30 min £10, 60 min £15 (migrations/0003_tier_pricing.sql)
 - [x] Corporate booking process signed off, Jordan's call, existing enquiry -> confirm -> payment link flow stands as built
@@ -59,6 +62,7 @@ Internal tracking doc. Not for client. Update as we go so nothing gets lost acro
 
 ## Payments (Square)
 - [x] Square API client (payment links, direct charge, webhook verification)
+- [x] Square OAuth for production (sandbox still uses the static token, see functions/lib/square-oauth.js)
 - [x] Deposit flow (bookings + corporate) via payment links
 - [x] Extension + food/drink charges via Square Web Payments SDK sourceId
 - [x] Card on file, saves after first payment of a visit, charges direct after that
