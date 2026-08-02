@@ -2,7 +2,7 @@
 // Deployed separately from the Pages site since Cron Triggers need their own
 // Worker. Bound to the same D1 database (see wrangler.toml in this folder).
 //
-// Three jobs each run, in order:
+// Four jobs each run, in order:
 //  1. Session expiry (existing): flips any session past its ends_at from
 //     "active" to "expired" and marks the seat "awaiting_extension".
 //  2. Auto-hold: for today's paid bookings whose slot is coming up soon,
@@ -14,6 +14,14 @@
 //  3. No-show release: any held seat whose grace period has passed with
 //     no QR scan goes back to "free" so staff can hand it to a walk-in
 //     without having to remember to release it themselves.
+//  4. Stuck-starting release: a scan claims a seat ("starting") before
+//     payment is charged; normally start.js releases it straight back to
+//     free itself if the charge fails. But if the customer's connection
+//     drops or the tab closes mid-request, that release never runs, and
+//     until now nothing else ever put the seat back either, so it sat on
+//     "starting" - shown as taken on the dashboard - indefinitely even
+//     though nobody paid and no session started. Anything still stuck
+//     there a few minutes after being claimed gets swept back to free.
 
 // How far ahead of a booking's slot time to pin a seat for it.
 const HOLD_LEAD_MINUTES = 20;
@@ -21,6 +29,13 @@ const HOLD_LEAD_MINUTES = 20;
 // How long after the slot time a held seat waits for a scan before it's
 // treated as a no-show and released back to free.
 const NO_SHOW_GRACE_MINUTES = 10;
+
+// How long a seat can sit on "starting" (claimed, payment not yet
+// confirmed) before it's treated as abandoned and released back to free.
+// A real payment resolves in seconds, so this is generous headroom for a
+// slow card network, not something a genuine in-progress payment should
+// ever bump into.
+const STARTING_TIMEOUT_MINUTES = 5;
 
 const TIERS = ["tier_1", "tier_2", "tier_3"];
 
@@ -159,6 +174,16 @@ export default {
        WHERE status = 'held' AND held_until <= ?`
     )
       .bind(nowIso)
+      .run();
+
+    // --- 4. Stuck-starting release ---
+    const startingCutoff = new Date(now.getTime() - STARTING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
+    await env.DB.prepare(
+      `UPDATE seats
+       SET status = 'free', claimed_at = NULL
+       WHERE status = 'starting' AND claimed_at IS NOT NULL AND claimed_at <= ?`
+    )
+      .bind(startingCutoff)
       .run();
   },
 };

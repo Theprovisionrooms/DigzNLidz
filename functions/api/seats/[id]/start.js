@@ -31,21 +31,31 @@ export async function onRequestPost({ params, request, env }) {
   // QR at once, say) can win this; the loser gets a clean "not free"
   // error here instead of both charging a card and racing to overwrite
   // each other's session on the same seat afterwards.
+  //
+  // claimed_at is stamped here so a seat that never makes it to a real
+  // session (payment never completes, connection drops mid-request, etc.)
+  // can be swept back to "free" by the cron job instead of sitting on
+  // "starting" - which the dashboard shows as taken - forever.
   const claim = await env.DB.prepare(
-    `UPDATE seats SET status = 'starting' WHERE id = ? AND status = 'free'`
+    `UPDATE seats SET status = 'starting', claimed_at = ? WHERE id = ? AND status = 'free'`
   )
-    .bind(seatId)
+    .bind(new Date().toISOString(), seatId)
     .run();
   if (!claim.meta.changes) {
     return Response.json({ error: "seat is not free" }, { status: 409 });
   }
 
-  const tierConfig = await getTierConfig(env.DB, tier);
-
   let customerId = null;
   let cardId = null;
+  let tierConfig;
 
   try {
+    // getTierConfig lives inside the try now too: it's a DB read like
+    // anything else here, and if it throws (bad/missing settings row,
+    // D1 hiccup) the seat needs releasing back to free just as much as
+    // a failed charge does, not left stuck on "starting".
+    tierConfig = await getTierConfig(env.DB, tier);
+
     if (tierConfig.pricePence > 0) {
       if (!sourceId) {
         throw { status: 402, error: "payment required for this tier" };
@@ -74,7 +84,7 @@ export async function onRequestPost({ params, request, env }) {
   } catch (e) {
     // Release the claim so the seat goes back to free rather than being
     // stuck on "starting" because payment failed or was never attempted.
-    await env.DB.prepare(`UPDATE seats SET status = 'free' WHERE id = ?`).bind(seatId).run();
+    await env.DB.prepare(`UPDATE seats SET status = 'free', claimed_at = NULL WHERE id = ?`).bind(seatId).run();
     if (e && e.status) return Response.json({ error: e.error }, { status: e.status });
     console.error("Square charge failed (seat start)", e);
     return Response.json({ error: `Payment couldn't be processed: ${e.message || "unknown error"}` }, { status: 502 });
@@ -92,7 +102,7 @@ export async function onRequestPost({ params, request, env }) {
 
   const sessionId = insert.meta.last_row_id;
 
-  await env.DB.prepare(`UPDATE seats SET status = 'active', current_session_id = ? WHERE id = ?`)
+  await env.DB.prepare(`UPDATE seats SET status = 'active', current_session_id = ?, claimed_at = NULL WHERE id = ?`)
     .bind(sessionId, seatId)
     .run();
 
