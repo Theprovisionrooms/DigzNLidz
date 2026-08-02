@@ -9,7 +9,7 @@ pages_build_output_dir = "public"
 SITE_URL = "https://digznlidz.co.uk"
 SQUARE_APPLICATION_ID = "sq0idp--EqN02FfX42qQy-xFBiEVQ"   # public, safe client-side
 SQUARE_LOCATION_ID = "LW2XPGHW0K0EY"  # public, safe client-side
-MAINTENANCE_MODE = "false"  # public visitors see coming-soon.html, see functions/_middleware.js
+MAINTENANCE_MODE = "true"  # public visitors see coming-soon.html, see functions/_middleware.js
                             # flip to "false" in Cloudflare env vars (Production) to go live, no redeploy needed
 
 [[d1_databases]]
