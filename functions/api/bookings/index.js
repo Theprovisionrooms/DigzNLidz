@@ -171,12 +171,26 @@ export async function onRequestPost({ request, env }) {
 
   const bookingId = insert.meta.last_row_id;
 
-  const payment = await createPaymentLink(env, {
-    amountPence: finalAmountPence,
-    reference: `booking:${bookingId}`,
-    description: `Digz N' Lidz booking - ${type}, ${partySize} ${partySize === 1 ? "person" : "people"}`,
-    redirectUrl: `${env.SITE_URL}/booking-confirmed?booking=${bookingId}`,
-  });
+  let payment;
+  try {
+    payment = await createPaymentLink(env, {
+      amountPence: finalAmountPence,
+      reference: `booking:${bookingId}`,
+      description: `Digz N' Lidz booking - ${type}, ${partySize} ${partySize === 1 ? "person" : "people"}`,
+      redirectUrl: `${env.SITE_URL}/booking-confirmed?booking=${bookingId}`,
+    });
+  } catch (e) {
+    // The booking row above is already saved as unpaid, that's fine, it
+    // just sits there until someone pays or it expires off the hold. What
+    // matters here is the customer sees a real reason instead of the page
+    // silently breaking, and we get the actual Square error in the logs
+    // rather than a generic crash.
+    console.error("Square payment link creation failed", e);
+    return Response.json(
+      { error: `Couldn't start checkout with Square: ${e.message}. Nothing's been charged, try again in a moment.` },
+      { status: 502 }
+    );
+  }
 
   await env.DB.prepare(`UPDATE bookings SET square_payment_id = ? WHERE id = ?`)
     .bind(payment.providerRef, bookingId)

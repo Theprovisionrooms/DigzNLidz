@@ -26,12 +26,21 @@ export async function onRequestPost({ params, request, env }) {
     return Response.json({ error: "enquiry not found" }, { status: 404 });
   }
 
-  const payment = await createPaymentLink(env, {
-    amountPence: depositPence,
-    reference: `corporate:${enquiryId}`,
-    description: `Digz N' Lidz corporate event deposit - ${enquiry.company_name || enquiry.contact_name}`,
-    redirectUrl: `${env.SITE_URL}/corporate-confirmed?enquiry=${enquiryId}`,
-  });
+  let payment;
+  try {
+    payment = await createPaymentLink(env, {
+      amountPence: depositPence,
+      reference: `corporate:${enquiryId}`,
+      description: `Digz N' Lidz corporate event deposit - ${enquiry.company_name || enquiry.contact_name}`,
+      redirectUrl: `${env.SITE_URL}/corporate-confirmed?enquiry=${enquiryId}`,
+    });
+  } catch (e) {
+    console.error("Square payment link creation failed (corporate)", e);
+    return Response.json(
+      { error: `Couldn't generate the Square deposit link: ${e.message}` },
+      { status: 502 }
+    );
+  }
 
   await env.DB.prepare(
     `UPDATE corporate_enquiries SET status = 'confirmed', payment_link_sent = 1, square_payment_link = ? WHERE id = ?`
