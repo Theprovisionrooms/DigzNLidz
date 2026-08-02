@@ -112,41 +112,125 @@ function bindHandlers() {
   });
 }
 
-// Renders a Square card element into #card-container and resolves with a
-// sourceId once the customer submits, or rejects on failure. Same pattern
-// as the seat page, every table order is a fresh charge since there's no
-// session to keep a card on file against.
+// Renders whichever of Apple Pay, Google Pay, and the card form the
+// customer's device supports into #card-container, and resolves with a
+// sourceId once one of them goes through. Same pattern as seat.js -
+// every table order is a fresh charge since there's no session to keep a
+// card on file against.
 async function collectCardAndSubmit(onToken, amountPence) {
   const container = document.getElementById("card-container");
   container.innerHTML = "";
-  const card = await squarePayments.card();
-  await card.attach("#card-container");
 
-  const payBtn = document.createElement("button");
-  payBtn.textContent = "Pay";
-  container.after(payBtn);
+  const amount = (amountPence / 100).toFixed(2);
+  const paymentRequest = squarePayments.paymentRequest({
+    countryCode: "GB",
+    currencyCode: "GBP",
+    total: { amount, label: "Digz N' Lidz" },
+  });
+
+  const walletsEl = document.createElement("div");
+  walletsEl.className = "wallet-buttons";
+  container.appendChild(walletsEl);
 
   return new Promise((resolve, reject) => {
-    payBtn.addEventListener("click", async () => {
-      payBtn.disabled = true;
-      payBtn.textContent = "Processing...";
+    let settled = false;
+
+    const finish = async (sourceId, onFail) => {
       try {
-        const result = await card.tokenize({
-          amount: (amountPence / 100).toFixed(2),
-          currencyCode: "GBP",
-          intent: "CHARGE",
-          customerInitiated: true,
-          sellerKeyedIn: false,
-        });
-        if (result.status !== "OK") throw new Error("Card details not accepted");
-        await onToken(result.token);
-        resolve();
+        await onToken(sourceId);
+        if (!settled) { settled = true; resolve(); }
       } catch (e) {
-        payBtn.disabled = false;
-        payBtn.textContent = "Pay";
-        reject(e);
+        onFail();
+        if (!settled) { settled = true; reject(e); }
       }
-    });
+    };
+
+    // --- Apple Pay ---
+    (async () => {
+      try {
+        const applePay = await squarePayments.applePay(paymentRequest);
+        const btn = document.createElement("button");
+        btn.textContent = " Pay";
+        btn.className = "wallet-btn apple-pay-btn";
+        walletsEl.appendChild(btn);
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          try {
+            const result = await applePay.tokenize();
+            if (result.status !== "OK") throw new Error("Apple Pay didn't go through, try again.");
+            await finish(result.token, () => { btn.disabled = false; });
+          } catch (e) {
+            btn.disabled = false;
+            if (!settled) { settled = true; reject(e); }
+          }
+        });
+      } catch (e) {
+        // Not available on this device, nothing to show.
+      }
+    })();
+
+    // --- Google Pay ---
+    (async () => {
+      try {
+        const googlePay = await squarePayments.googlePay(paymentRequest);
+        const mount = document.createElement("div");
+        mount.className = "wallet-btn";
+        walletsEl.appendChild(mount);
+        await googlePay.attach(mount);
+        mount.addEventListener("click", async (e) => {
+          e.preventDefault();
+          try {
+            const result = await googlePay.tokenize();
+            if (result.status !== "OK") throw new Error("Google Pay didn't go through, try again.");
+            await finish(result.token, () => {});
+          } catch (err) {
+            if (!settled) { settled = true; reject(err); }
+          }
+        });
+      } catch (e) {
+        // Not available on this device, nothing to show.
+      }
+    })();
+
+    // --- Card ---
+    (async () => {
+      const divider = document.createElement("div");
+      divider.className = "wallet-divider";
+      divider.textContent = "Or pay by card";
+      container.appendChild(divider);
+
+      const cardMount = document.createElement("div");
+      container.appendChild(cardMount);
+      const card = await squarePayments.card();
+      await card.attach(cardMount);
+
+      const payBtn = document.createElement("button");
+      payBtn.textContent = "Pay";
+      cardMount.after(payBtn);
+
+      payBtn.addEventListener("click", async () => {
+        payBtn.disabled = true;
+        payBtn.textContent = "Processing...";
+        try {
+          const result = await card.tokenize({
+            amount,
+            currencyCode: "GBP",
+            intent: "CHARGE",
+            customerInitiated: true,
+            sellerKeyedIn: false,
+          });
+          if (result.status !== "OK") throw new Error("Card details not accepted");
+          await finish(result.token, () => {
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay";
+          });
+        } catch (e) {
+          payBtn.disabled = false;
+          payBtn.textContent = "Pay";
+          if (!settled) { settled = true; reject(e); }
+        }
+      });
+    })();
   });
 }
 
