@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /seat
+Disallow: /table
+Disallow: /start
+Disallow: /group-start
+Disallow: /booking-confirmed
+
+Sitemap: https://digznlidz.co.uk/sitemap.xml

@@ -280,48 +280,152 @@ async function endSession() {
   }
 }
 
-// Renders a Square card element into #card-container and resolves with a
-// sourceId once the customer submits, or rejects on failure. amountPence
-// is passed through to Square's SCA verification during tokenize.
+// Renders whichever of Apple Pay, Google Pay, and the card form the
+// customer's device actually supports into #card-container, and resolves
+// with a sourceId once one of them goes through (or rejects on the first
+// failure, same as before - the button that failed stays live so they can
+// just try again without collectCardAndSubmit being called a second time).
+// amountPence is passed through to Square for SCA verification and shown
+// as the total on the Apple Pay/Google Pay sheet.
+//
+// Every call site (tier start, extension, food order) already just wants
+// "a sourceId, however they choose to pay", so nothing downstream of
+// onToken needed to change for this.
 async function collectCardAndSubmit(onToken, amountPence) {
   const container = document.getElementById("card-container");
   container.innerHTML = "";
-  const card = await squarePayments.card();
-  await card.attach("#card-container");
-
-  const payBtn = document.createElement("button");
-  payBtn.textContent = "Pay";
-  container.after(payBtn);
-
   cardFormActive = true;
 
+  const amount = (amountPence / 100).toFixed(2);
+  const paymentRequest = squarePayments.paymentRequest({
+    countryCode: "GB",
+    currencyCode: "GBP",
+    total: { amount, label: "Digz N' Lidz" },
+  });
+
+  const walletsEl = document.createElement("div");
+  walletsEl.className = "wallet-buttons";
+  container.appendChild(walletsEl);
+
   return new Promise((resolve, reject) => {
-    payBtn.addEventListener("click", async () => {
-      // They've committed to paying now, safe for background polling to
-      // resume, whatever it triggers will only run in the background
-      // while "Processing..." is showing.
-      cardFormActive = false;
-      payBtn.disabled = true;
-      payBtn.textContent = "Processing...";
+    let settled = false;
+
+    // Shared by every method: a successful tokenize hands its sourceId to
+    // onToken, and only the first method to get all the way through
+    // settles the outer promise, whichever the customer actually used.
+    const finish = async (sourceId, onFail) => {
       try {
-        const result = await card.tokenize({
-          amount: (amountPence / 100).toFixed(2),
-          currencyCode: "GBP",
-          intent: "CHARGE",
-          customerInitiated: true,
-          sellerKeyedIn: false,
-        });
-        if (result.status !== "OK") throw new Error("Card details not accepted");
-        await onToken(result.token);
-        resolve();
+        await onToken(sourceId);
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
       } catch (e) {
-        // Failed, the card form is still showing for a retry, protect it again.
-        cardFormActive = true;
-        payBtn.disabled = false;
-        payBtn.textContent = "Pay";
-        reject(e);
+        onFail();
+        if (!settled) {
+          settled = true;
+          reject(e);
+        }
       }
-    });
+    };
+
+    // --- Apple Pay --- Safari/iOS only. If it's not available (any other
+    // browser, or the domain verification file isn't live yet) Square's
+    // SDK throws here, so it just quietly doesn't show the button rather
+    // than erroring the whole payment step.
+    (async () => {
+      try {
+        const applePay = await squarePayments.applePay(paymentRequest);
+        const btn = document.createElement("button");
+        btn.textContent = " Pay";
+        btn.className = "wallet-btn apple-pay-btn";
+        walletsEl.appendChild(btn);
+        btn.addEventListener("click", async () => {
+          cardFormActive = false;
+          btn.disabled = true;
+          try {
+            const result = await applePay.tokenize();
+            if (result.status !== "OK") throw new Error("Apple Pay didn't go through, try again.");
+            await finish(result.token, () => { btn.disabled = false; });
+          } catch (e) {
+            cardFormActive = true;
+            btn.disabled = false;
+            if (!settled) { settled = true; reject(e); }
+          }
+        });
+      } catch (e) {
+        // Not available on this device, nothing to show.
+      }
+    })();
+
+    // --- Google Pay --- Square's SDK draws its own branded button once
+    // attached; same not-available handling as Apple Pay above.
+    (async () => {
+      try {
+        const googlePay = await squarePayments.googlePay(paymentRequest);
+        const mount = document.createElement("div");
+        mount.className = "wallet-btn";
+        walletsEl.appendChild(mount);
+        await googlePay.attach(mount);
+        mount.addEventListener("click", async (e) => {
+          e.preventDefault();
+          cardFormActive = false;
+          try {
+            const result = await googlePay.tokenize();
+            if (result.status !== "OK") throw new Error("Google Pay didn't go through, try again.");
+            await finish(result.token, () => {});
+          } catch (err) {
+            cardFormActive = true;
+            if (!settled) { settled = true; reject(err); }
+          }
+        });
+      } catch (e) {
+        // Not available on this device, nothing to show.
+      }
+    })();
+
+    // --- Card --- always available, same form as before, just moved
+    // below the wallet buttons so a one-tap option leads when there is one.
+    (async () => {
+      const divider = document.createElement("div");
+      divider.className = "wallet-divider";
+      divider.textContent = "Or pay by card";
+      container.appendChild(divider);
+
+      const cardMount = document.createElement("div");
+      container.appendChild(cardMount);
+      const card = await squarePayments.card();
+      await card.attach(cardMount);
+
+      const payBtn = document.createElement("button");
+      payBtn.textContent = "Pay";
+      cardMount.after(payBtn);
+
+      payBtn.addEventListener("click", async () => {
+        cardFormActive = false;
+        payBtn.disabled = true;
+        payBtn.textContent = "Processing...";
+        try {
+          const result = await card.tokenize({
+            amount,
+            currencyCode: "GBP",
+            intent: "CHARGE",
+            customerInitiated: true,
+            sellerKeyedIn: false,
+          });
+          if (result.status !== "OK") throw new Error("Card details not accepted");
+          await finish(result.token, () => {
+            payBtn.disabled = false;
+            payBtn.textContent = "Pay";
+          });
+        } catch (e) {
+          cardFormActive = true;
+          payBtn.disabled = false;
+          payBtn.textContent = "Pay";
+          if (!settled) { settled = true; reject(e); }
+        }
+      });
+    })();
   });
 }
 

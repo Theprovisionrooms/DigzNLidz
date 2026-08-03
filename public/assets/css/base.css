@@ -99,6 +99,34 @@ button.secondary {
   min-height: 40px;
 }
 
+.wallet-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wallet-btn {
+  min-height: 44px;
+}
+
+.apple-pay-btn {
+  background: #000;
+  color: #fff;
+  font-family: -apple-system, "SF Pro Text", "Arial", sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.wallet-divider {
+  text-align: center;
+  color: var(--bone);
+  opacity: 0.55;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 16px 0 10px;
+}
+
 .item-row {
   display: flex;
   justify-content: space-between;
