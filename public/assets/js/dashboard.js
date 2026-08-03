@@ -9,6 +9,58 @@ document.getElementById("staff-group-open").addEventListener("click", () => {
   const size = Math.max(2, Math.min(16, Number(document.getElementById("staff-group-size").value) || 2));
   window.open(`/group-start/?size=${size}`, "_blank");
 });
+document.getElementById("claim-seat-btn").addEventListener("click", () => claimSeat());
+
+// Manual seat claim, the counter fallback for a customer whose phone
+// won't scan, pay, or get signal. Always calls without force first, if
+// the seat's held for a booking the API sends back who so staff can
+// check that booking isn't about to walk in before claiming it for
+// someone else. Only re-sends with force once staff have confirmed that
+// themselves via the browser confirm dialog below.
+async function claimSeat(force = false) {
+  const statusEl = document.getElementById("claim-seat-status");
+  const seatId = Number(document.getElementById("claim-seat-id").value);
+  const tier = document.getElementById("claim-tier").value;
+  const claimMethod = document.getElementById("claim-method").value;
+  const note = document.getElementById("claim-note").value;
+
+  if (!seatId) {
+    statusEl.style.color = "var(--rust)";
+    statusEl.textContent = "Enter a seat number first.";
+    return;
+  }
+
+  statusEl.style.color = "";
+  statusEl.textContent = "Claiming...";
+
+  const res = await fetch("/api/dashboard/claim-seat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seatId, tier, claimMethod, note, force }),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    if (data.error === "held" && !force) {
+      const proceed = confirm(`${data.message}\n\nClaim this seat anyway?`);
+      if (proceed) {
+        claimSeat(true);
+      } else {
+        statusEl.style.color = "";
+        statusEl.textContent = "Not claimed, seat left as held for that booking.";
+      }
+      return;
+    }
+    statusEl.style.color = "var(--rust)";
+    statusEl.textContent = data.error || data.message || "Couldn't claim that seat.";
+    return;
+  }
+
+  statusEl.style.color = "var(--yellow)";
+  statusEl.textContent = `Seat ${seatId} claimed and running.`;
+  document.getElementById("claim-note").value = "";
+  loadDashboard();
+}
 
 async function login() {
   const password = document.getElementById("password").value;

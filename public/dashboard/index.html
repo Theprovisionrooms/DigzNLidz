@@ -172,6 +172,28 @@
       </div>
 
       <div class="card">
+        <h2>Claim a seat manually</h2>
+        <p style="font-size:13px;"><small>Fallback for when a customer's phone won't scan, pay, or get signal. Take payment your own way at the counter (card machine or cash), then fill the seat in here. If the seat you pick is held for a booking, you'll be shown who before it lets you carry on, so always check that first.</small></p>
+        <span class="field-label">Seat number</span>
+        <input type="number" id="claim-seat-id" min="1" max="16" style="width:100%;padding:8px;margin:6px 0;">
+        <span class="field-label">Session length</span>
+        <select id="claim-tier" style="width:100%;padding:8px;margin:6px 0;">
+          <option value="tier_1">Tier 1</option>
+          <option value="tier_2">Tier 2</option>
+          <option value="tier_3">Tier 3</option>
+        </select>
+        <span class="field-label">How was it paid</span>
+        <select id="claim-method" style="width:100%;padding:8px;margin:6px 0;">
+          <option value="card_machine">Card machine</option>
+          <option value="cash">Cash</option>
+          <option value="other">Other</option>
+        </select>
+        <input id="claim-note" placeholder="Note (optional)" style="width:100%;padding:8px;margin:6px 0;">
+        <button id="claim-seat-btn" class="secondary">Claim seat</button>
+        <div id="claim-seat-status" style="font-size:13px;margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
         <h2>Discount codes</h2>
         <div id="discount-list"></div>
         <h3 style="font-size:14px;color:var(--yellow);margin-top:16px;">New code</h3>
