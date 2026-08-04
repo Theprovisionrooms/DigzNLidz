@@ -44,12 +44,21 @@ export async function onRequestGet({ request, env }) {
   // in the batch loses the race (extremely tight timing, but possible),
   // release everything already claimed back to free rather than leaving
   // the group one seat short.
+  //
+  // claimed_at is stamped for the same reason it is in start.js: if the
+  // group never makes it to group/start.js at all (tab closed, walked
+  // off, phone died, before ever attempting payment), nothing else would
+  // release these seats. Without this the stuck-starting cron (0011)
+  // silently skips them, since its query only picks up seats where
+  // claimed_at is actually set, and they'd sit "taken" on the dashboard
+  // indefinitely with no way for staff to reclaim them.
+  const claimedAt = new Date().toISOString();
   const claimed = [];
   for (const seatId of freeSeatIds.slice(0, size)) {
     const claim = await env.DB.prepare(
-      `UPDATE seats SET status = 'starting' WHERE id = ? AND status = 'free'`
+      `UPDATE seats SET status = 'starting', claimed_at = ? WHERE id = ? AND status = 'free'`
     )
-      .bind(seatId)
+      .bind(claimedAt, seatId)
       .run();
     if (claim.meta.changes) {
       claimed.push(seatId);
@@ -62,7 +71,7 @@ export async function onRequestGet({ request, env }) {
     // Lost the race on at least one seat, release everything we did
     // manage to claim and ask the guest to try again.
     for (const seatId of claimed) {
-      await env.DB.prepare(`UPDATE seats SET status = 'free' WHERE id = ?`).bind(seatId).run();
+      await env.DB.prepare(`UPDATE seats SET status = 'free', claimed_at = NULL WHERE id = ?`).bind(seatId).run();
     }
     return Response.json(
       { error: "Those seats were just taken, try again." },

@@ -72,7 +72,7 @@ export async function onRequestPost({ request, env }) {
     // Release every seat in the group back to free, not just one, if
     // payment failed or was never attempted.
     for (const seatId of seatIds) {
-      await env.DB.prepare(`UPDATE seats SET status = 'free' WHERE id = ?`).bind(seatId).run();
+      await env.DB.prepare(`UPDATE seats SET status = 'free', claimed_at = NULL WHERE id = ?`).bind(seatId).run();
     }
     if (e && e.status) return Response.json({ error: e.error }, { status: e.status });
     console.error("Square charge failed (group start)", e);
@@ -94,7 +94,7 @@ export async function onRequestPost({ request, env }) {
     const sessionId = insert.meta.last_row_id;
     sessionIds.push(sessionId);
 
-    await env.DB.prepare(`UPDATE seats SET status = 'active', current_session_id = ? WHERE id = ?`)
+    await env.DB.prepare(`UPDATE seats SET status = 'active', current_session_id = ?, claimed_at = NULL WHERE id = ?`)
       .bind(sessionId, seatId)
       .run();
   }
