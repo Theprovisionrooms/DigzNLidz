@@ -17,10 +17,22 @@ export async function onRequestGet({ request, env }) {
      ORDER BY created_at ASC`
   ).all();
 
-  const orders = results.map((o) => ({
-    ...o,
-    items: JSON.parse(o.items_json),
-  }));
+  // Parsed defensively: one row with bad items_json (shouldn't happen,
+  // but a bad write or manual DB edit could cause it) used to 500 the
+  // whole endpoint, which would blank out every order on both the
+  // dashboard and the kitchen screen, not just the bad one. Now a single
+  // broken row just shows as "(unreadable order)" and everything else
+  // still comes through.
+  const orders = results.map((o) => {
+    let items;
+    try {
+      items = JSON.parse(o.items_json);
+    } catch (e) {
+      console.error(`orders.js: bad items_json for order ${o.id}`, e);
+      items = [{ name: "(unreadable order, check with a manager)", quantity: 1 }];
+    }
+    return { ...o, items };
+  });
 
   return Response.json({ orders });
 }

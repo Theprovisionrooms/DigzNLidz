@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/assets/favicon/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="/assets/favicon/site.webmanifest">
+  <title>Kitchen | Digz N' Lidz</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <style>
+    body { overflow-x: hidden; }
+    .wrap { max-width: 100%; padding: 16px 20px 60px; }
+
+    /* ---- Login ---- */
+    #login-view { max-width: 420px; margin: 15vh auto 0; text-align: center; }
+    #login-view input { width: 100%; padding: 16px; font-size: 20px; margin: 12px 0; }
+    #login-view button { width: 100%; padding: 16px; font-size: 20px; }
+
+    /* ---- Header ---- */
+    .kv-header {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+    }
+    .kv-title { font-size: 34px; font-weight: 700; color: var(--yellow); margin: 0; }
+    .kv-status { display: flex; align-items: center; gap: 18px; font-size: 16px; }
+    .kv-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; background: #3f8a54; }
+    .kv-dot.stale { background: var(--rust); animation: kv-pulse-dot 1s infinite; }
+    .kv-clock { font-variant-numeric: tabular-nums; opacity: 0.8; }
+    .kv-btn-sm { padding: 10px 16px; font-size: 15px; width: auto; }
+
+    /* ---- Order grid ---- */
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 18px;
+    }
+    .kv-card {
+      background: var(--panel);
+      border: 3px solid #333;
+      border-radius: 10px;
+      padding: 20px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .kv-card.status-placed { border-color: var(--yellow); }
+    .kv-card.status-preparing { border-color: #5b8fd6; }
+    .kv-card.status-overdue {
+      border-color: var(--rust);
+      box-shadow: 0 0 0 3px rgba(179, 83, 34, 0.5);
+      animation: kv-pulse-card 1.1s infinite;
+    }
+    .kv-card.kv-new { animation: kv-flash-new 1.4s ease-out 3; }
+
+    .kv-card-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .kv-where { font-size: 30px; font-weight: 700; color: var(--yellow); line-height: 1; }
+    .kv-where.table { color: #7fb3f0; }
+    .kv-age { font-size: 16px; font-weight: 600; opacity: 0.85; }
+    .kv-age.warn { color: var(--yellow); }
+    .kv-age.overdue { color: var(--rust); }
+
+    .kv-items { list-style: none; padding: 0; margin: 0 0 16px; font-size: 20px; line-height: 1.5; }
+    .kv-items li { display: flex; justify-content: space-between; gap: 10px; }
+    .kv-items .qty { font-weight: 700; color: var(--bone); min-width: 30px; }
+
+    .kv-status-label {
+      display: inline-block; font-size: 14px; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 4px 10px; border-radius: 4px; margin-bottom: 14px;
+    }
+    .kv-status-label.placed { background: var(--yellow); color: var(--site-black); }
+    .kv-status-label.preparing { background: #5b8fd6; color: var(--site-black); }
+
+    .kv-actions { display: flex; gap: 10px; }
+    .kv-actions button { flex: 1; padding: 18px 10px; font-size: 18px; font-weight: 700; }
+
+    .kv-empty { text-align: center; padding: 80px 20px; opacity: 0.6; font-size: 22px; }
+
+    @keyframes kv-pulse-card {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(179, 83, 34, 0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(179, 83, 34, 0.15); }
+    }
+    @keyframes kv-pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    @keyframes kv-flash-new {
+      0%, 100% { background: var(--panel); }
+      50% { background: #3a3320; }
+    }
+
+    /* Sound unlock overlay, browsers block audio until a tap happens */
+    #sound-gate {
+      position: fixed; inset: 0; background: rgba(10,10,10,0.94);
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      z-index: 999; text-align: center; padding: 20px;
+    }
+    #sound-gate button { font-size: 24px; padding: 22px 40px; }
+    #sound-gate p { max-width: 420px; opacity: 0.8; }
+
+    @media (min-width: 900px) {
+      .kv-title { font-size: 42px; }
+      .kv-where { font-size: 36px; }
+      .kv-items { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sound-gate">
+    <h1 style="color:var(--yellow);margin-bottom:6px;">Kitchen Order Screen</h1>
+    <p>This screen alerts with sound when a new order comes in. Tap below once to turn sound on for this device, then leave it running.</p>
+    <button id="sound-gate-btn">Tap to Enable Sound &amp; Start</button>
+  </div>
+
+  <div id="login-view" style="display:none;">
+    <img src="/assets/img/branding/logo.webp" alt="Digz N' Lidz" style="max-width:220px;margin-bottom:20px;">
+    <h1>Kitchen Screen Login</h1>
+    <input type="password" id="password" placeholder="Staff password" autocomplete="off">
+    <button id="login-btn">Enter</button>
+    <p id="login-error" style="color:var(--rust);"></p>
+  </div>
+
+  <div id="kitchen-view" class="wrap" style="display:none;">
+    <div class="kv-header">
+      <h1 class="kv-title">Kitchen Orders</h1>
+      <div class="kv-status">
+        <span><span class="kv-dot" id="kv-dot"></span><span id="kv-dot-label">Live</span></span>
+        <span class="kv-clock" id="kv-clock"></span>
+        <button class="kv-btn-sm secondary" id="test-alert-btn">Test Alert</button>
+      </div>
+    </div>
+    <div id="kv-grid" class="kv-grid"></div>
+  </div>
+
+  <script src="/assets/js/kitchen.js"></script>
+</body>
+</html>

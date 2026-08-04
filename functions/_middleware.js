@@ -20,7 +20,7 @@
 
 const BYPASS_COOKIE = "dnl_preview";
 
-const ALWAYS_ALLOWED_PREFIXES = ["/api/", "/dashboard", "/assets/", "/coming-soon.html"];
+const ALWAYS_ALLOWED_PREFIXES = ["/api/", "/dashboard", "/kitchen", "/assets/", "/coming-soon.html"];
 
 export async function onRequest({ request, env, next }) {
   if (env.MAINTENANCE_MODE !== "true") {
