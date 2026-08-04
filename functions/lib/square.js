@@ -198,11 +198,22 @@ export async function disableCard(env, cardId) {
 // Verifies the signature Square sends on webhook requests so payment
 // confirmations can't be spoofed.
 // https://developer.squareup.com/docs/webhooks/step3validate
+//
+// Square signs with HMAC-SHA256 (see the x-square-hmacsha256-signature
+// header this gets compared against in square-webhook.js), this was
+// importing the key as SHA-1 instead, a leftover from Square's old,
+// deprecated v1 webhook signing scheme. That mismatch meant the computed
+// signature could never match Square's real one, so every genuine
+// webhook call was being rejected as invalid and silently dropped. In
+// practice that meant standard bookings (paid via a Square payment link,
+// not a direct card charge) never actually got marked paid, never sent
+// their confirmation email, and never got an auto-held seat, even though
+// the payment itself had gone through fine on Square's side.
 export async function verifyWebhookSignature(env, { signature, body, notificationUrl }) {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(env.SQUARE_WEBHOOK_SIGNATURE_KEY),
-    { name: "HMAC", hash: "SHA-1" },
+    { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
   );
