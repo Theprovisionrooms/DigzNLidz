@@ -52,7 +52,14 @@ export async function onRequestPost({ request, env }) {
 
   if (refType === "corporate") {
     const enquiry = await env.DB.prepare(`SELECT * FROM corporate_enquiries WHERE id = ?`).bind(refId).first();
-    if (enquiry) {
+    // Same guard as the booking branch above. Square can and does retry
+    // webhook deliveries, and this route used to have nothing stopping a
+    // retry from re-sending "your deposit is confirmed" to a real client.
+    // deposit_paid also gives staff something the dashboard can actually
+    // show, previously nothing here ever wrote back to the DB at all, so
+    // "confirmed" meant "link sent" whether or not it had been paid.
+    if (enquiry && !enquiry.deposit_paid) {
+      await env.DB.prepare(`UPDATE corporate_enquiries SET deposit_paid = 1 WHERE id = ?`).bind(refId).run();
       await sendEmail(env, {
         to: enquiry.email,
         subject: "Your Digz N' Lidz event deposit is confirmed",

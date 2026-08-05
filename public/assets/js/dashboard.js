@@ -486,7 +486,7 @@ function render(data) {
     upcomingList.innerHTML = data.upcomingCorporateEvents.map((e) => `
       <div class="card" style="background:#141414;">
         <strong>${e.company_name || e.contact_name}</strong>
-        <span style="float:right;font-size:12px;color:var(--yellow);">${e.status === "confirmed" ? "Square link sent" : (e.deposit_method || "").replace("_", " ")}</span>
+        <span style="float:right;font-size:12px;color:var(--yellow);">${e.status === "confirmed" ? (e.deposit_paid ? "Deposit paid" : "Square link sent, awaiting payment") : (e.deposit_method || "").replace("_", " ")}</span>
         <br>
         <small>${e.contact_name} · ${e.email} · ${e.headcount || "?"} people · ${e.event_date || "date TBC"}</small>
         <div style="margin-top:8px;">

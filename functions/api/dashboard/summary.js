@@ -26,7 +26,17 @@ export async function onRequestGet({ request, env }) {
     mailingListBySegment,
     campaignPerformance,
   ] = await Promise.all([
-    db.prepare(`SELECT COUNT(*) as n, type FROM bookings WHERE booking_date = ? GROUP BY type`).bind(today).all(),
+    // payment_status = 'paid' only. A booking row is written the moment
+    // someone starts checkout, before Square's confirmed anything, that's
+    // needed so the capacity check can hold the seat while they pay. But
+    // that means an abandoned/never-paid checkout still leaves a row
+    // behind forever, and this headline count used to include those, so
+    // it just climbed on every test or abandoned checkout regardless of
+    // whether any money moved. bookingsTodayDetail below still shows
+    // every row including unpaid ones, staff need that for the hold panel,
+    // this one is just the "how many bookings do we actually have today"
+    // number.
+    db.prepare(`SELECT COUNT(*) as n, type FROM bookings WHERE booking_date = ? AND payment_status = 'paid' GROUP BY type`).bind(today).all(),
     // Full detail for today, sorted by slot, so staff know exactly how
     // many seats to hold free and when, not just a headline count.
     db.prepare(
@@ -38,7 +48,8 @@ export async function onRequestGet({ request, env }) {
     // toISOString() string uses a "T" separator instead of a space and
     // silently fails to match on same-day comparisons (space sorts before
     // "T", so "today, spot on 7 days ago" could look earlier than it is).
-    db.prepare(`SELECT COUNT(*) as n FROM bookings WHERE created_at >= datetime('now', '-7 days')`).first(),
+    // Same paid-only filter as above, same reason.
+    db.prepare(`SELECT COUNT(*) as n FROM bookings WHERE created_at >= datetime('now', '-7 days') AND payment_status = 'paid'`).first(),
     db.prepare(`SELECT COALESCE(SUM(total_amount_pence),0) as total FROM bookings WHERE payment_status = 'paid'`).first(),
     db.prepare(`SELECT COALESCE(SUM(total_pence),0) as total FROM orders`).first(),
     // Actual amount charged for extensions, recorded per session at the

@@ -20,7 +20,14 @@
 
 const BYPASS_COOKIE = "dnl_preview";
 
-const ALWAYS_ALLOWED_PREFIXES = ["/api/", "/dashboard", "/kitchen", "/assets/", "/coming-soon.html"];
+// /booking-confirmed and /corporate-confirmed are where Square redirects
+// a customer straight after they pay, so these need to work even while
+// the rest of the public site is gated, whenever a payment link's gone
+// out before MAINTENANCE_MODE flips off (corporate deposit links, for
+// instance, since staff can already send those from /dashboard). Without
+// this, a real customer who'd just paid landed on the coming soon page
+// instead of their confirmation.
+const ALWAYS_ALLOWED_PREFIXES = ["/api/", "/dashboard", "/kitchen", "/assets/", "/coming-soon.html", "/booking-confirmed", "/corporate-confirmed"];
 
 export async function onRequest({ request, env, next }) {
   if (env.MAINTENANCE_MODE !== "true") {
