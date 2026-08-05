@@ -168,10 +168,10 @@ export async function onRequestPost({ request, env }) {
   }
 
   const insert = await env.DB.prepare(
-    `INSERT INTO bookings (type, name, email, phone, party_size, booking_date, slot_time, total_amount_pence, tier_breakdown_json, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO bookings (type, name, email, phone, party_size, booking_date, slot_time, total_amount_pence, tier_breakdown_json, notes, discount_code)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(type, name, email, phone || null, partySize, bookingDate, slotTime, finalAmountPence, JSON.stringify(cleanCounts), notes || null)
+    .bind(type, name, email, phone || null, partySize, bookingDate, slotTime, finalAmountPence, JSON.stringify(cleanCounts), notes || null, appliedCode || null)
     .run();
 
   const bookingId = insert.meta.last_row_id;
@@ -201,9 +201,11 @@ export async function onRequestPost({ request, env }) {
     .bind(payment.providerRef, bookingId)
     .run();
 
-  if (appliedCode) {
-    await env.DB.prepare(`UPDATE discount_codes SET uses = uses + 1 WHERE code = ?`).bind(appliedCode).run();
-  }
+  // uses is incremented once the booking's actually paid (see the
+  // webhook), not here. This used to increment on every checkout start,
+  // paid or not, so a capped code (e.g. "first 10 customers") could be
+  // burned through entirely by abandoned or test checkouts and lock out
+  // real customers with no obvious reason why.
 
   return Response.json({
     bookingId,

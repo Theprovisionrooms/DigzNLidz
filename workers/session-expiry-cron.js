@@ -64,6 +64,47 @@ async function sendEmail(env, { to, subject, html }) {
   return res.json();
 }
 
+// Cloudflare Workers always run in UTC, there's no "local" timezone.
+// slot_time and booking_date are wall-clock UK time as a customer or
+// staff member typed them though, so comparing them against a plain UTC
+// Date used to be off by whatever the UK's current offset from UTC is,
+// an hour during BST (roughly late March to late October, which covers
+// most of the trading season including right now). That meant seats got
+// auto-held and the "your seat's ready" email went out an hour later
+// than a booking's actual slot time, not earlier, so it could land after
+// the customer had already arrived. Computed via Intl rather than a
+// hardcoded +1 so it keeps working across the GMT/BST switchover instead
+// of quietly breaking again every spring and autumn.
+function londonOffsetMinutes(date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/London",
+    hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  const asUtc = Date.UTC(
+    Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+    parts.hour === "24" ? 0 : Number(parts.hour), Number(parts.minute), Number(parts.second)
+  );
+  return Math.round((asUtc - date.getTime()) / 60000);
+}
+
+// "YYYY-MM-DD" London calendar date for a given instant, not UTC's.
+function londonDateString(date) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
+}
+
+// Interprets dateStr + "HH:MM" as London wall-clock time and returns the
+// real UTC instant it corresponds to.
+function londonSlotToUtcDate(dateStr, timeStr) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hour, minute] = timeStr.split(":").map(Number);
+  const guessUtc = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  return new Date(guessUtc.getTime() - londonOffsetMinutes(guessUtc) * 60000);
+}
+
 export default {
   async scheduled(event, env, ctx) {
     const now = new Date();
@@ -86,7 +127,7 @@ export default {
     }
 
     // --- 2. Auto-hold: pin seats for bookings coming up soon ---
-    const today = now.toISOString().slice(0, 10);
+    const today = londonDateString(now);
     const leadCutoff = new Date(now.getTime() + HOLD_LEAD_MINUTES * 60 * 1000);
 
     const { results: dueBookings } = await env.DB.prepare(
@@ -98,11 +139,10 @@ export default {
       .all();
 
     for (const booking of dueBookings) {
-      const [h, m] = booking.slot_time.split(":").map(Number);
-      const slotDate = new Date(now);
-      slotDate.setHours(h, m, 0, 0);
+      const slotDate = londonSlotToUtcDate(today, booking.slot_time);
 
       // Only hold seats once we're inside the lead window and the slot
+
       // hasn't already passed, no point pinning a seat for something
       // hours away or that's already started.
       if (slotDate > leadCutoff || slotDate < now) continue;

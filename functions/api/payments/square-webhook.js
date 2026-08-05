@@ -38,6 +38,14 @@ export async function onRequestPost({ request, env }) {
     const booking = await env.DB.prepare(`SELECT * FROM bookings WHERE id = ?`).bind(refId).first();
     if (booking && booking.payment_status !== "paid") {
       await env.DB.prepare(`UPDATE bookings SET payment_status = 'paid' WHERE id = ?`).bind(refId).run();
+      // Moved here from booking creation: a discount code's use count now
+      // only goes up once the booking's actually paid, not the moment
+      // checkout starts, so an abandoned or test checkout can't burn
+      // through a capped code (e.g. "first 10 customers") and lock real
+      // customers out of it for no reason they'd ever see.
+      if (booking.discount_code) {
+        await env.DB.prepare(`UPDATE discount_codes SET uses = uses + 1 WHERE code = ?`).bind(booking.discount_code).run();
+      }
       // Mailing list opt-in happens client-side (see book.js), gated on
       // the marketing consent checkbox, so nothing gets added here. This
       // used to insert unconditionally, which meant every paying customer
