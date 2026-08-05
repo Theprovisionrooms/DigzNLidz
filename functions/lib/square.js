@@ -2,9 +2,43 @@
 // Raw fetch against Square's REST API rather than the Node SDK, since the SDK
 // is not built for the Workers runtime.
 
-import { getValidAccessToken } from "./square-oauth.js";
+import { getValidAccessToken, getStoredTokens } from "./square-oauth.js";
 
 const API_VERSION = "2025-01-23";
+
+// Sandbox: the plain SQUARE_LOCATION_ID env var, same as before, this
+// only ever points at the sandbox test location so a hardcoded value is
+// fine here. Production: reads the real location id Square handed back
+// when the account was connected (see square-oauth.js), never the env
+// var, so going live for real never depends on someone remembering to
+// hand-update SQUARE_LOCATION_ID to match whichever account actually
+// got connected.
+//
+// Falls back to the env var rather than hard-failing if nothing's
+// stored yet, since a real production system could easily have been
+// connected before this locationId capture existed (it did, here) - a
+// stored row with no location on it shouldn't suddenly break every live
+// payment the moment this deploys. It'll self-correct the next time
+// someone clicks "Connect to Square" from /dashboard, which re-fetches
+// and stores it properly, at which point this fallback stops being hit.
+export async function getLocationId(env) {
+  if (env.SQUARE_ENV !== "production") {
+    return env.SQUARE_LOCATION_ID;
+  }
+  const stored = await getStoredTokens(env.DB);
+  if (stored?.locationId) {
+    return stored.locationId;
+  }
+  if (env.SQUARE_LOCATION_ID) {
+    console.error(
+      "Square is connected but no location_id is stored yet (connected before this was added), falling back to the SQUARE_LOCATION_ID env var. Click Connect to Square again in /dashboard to fix this properly."
+    );
+    return env.SQUARE_LOCATION_ID;
+  }
+  throw new Error(
+    "Square isn't connected yet. A staff member needs to log into /dashboard and click Connect to Square."
+  );
+}
 
 function baseUrl(env) {
   return env.SQUARE_ENV === "production"
@@ -91,7 +125,7 @@ export async function createPaymentLink(env, { amountPence, reference, descripti
       quick_pay: {
         name: description,
         price_money: { amount: amountPence, currency: "GBP" },
-        location_id: env.SQUARE_LOCATION_ID,
+        location_id: await getLocationId(env),
       },
       checkout_options: {
         redirect_url: redirectUrl,
@@ -117,7 +151,7 @@ export async function chargeSourceId(env, { sourceId, amountPence, reference, cu
       idempotency_key: crypto.randomUUID(),
       source_id: sourceId,
       amount_money: { amount: amountPence, currency: "GBP" },
-      location_id: env.SQUARE_LOCATION_ID,
+      location_id: await getLocationId(env),
       note: reference,
       ...(customerId ? { customer_id: customerId } : {}),
     }),
@@ -174,7 +208,7 @@ export async function chargeCardOnFile(env, { customerId, cardId, amountPence, r
       source_id: cardId,
       customer_id: customerId,
       amount_money: { amount: amountPence, currency: "GBP" },
-      location_id: env.SQUARE_LOCATION_ID,
+      location_id: await getLocationId(env),
       note: reference,
     }),
   });

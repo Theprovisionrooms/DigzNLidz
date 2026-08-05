@@ -3,7 +3,7 @@
 // response is readable by anyone who loads the seat page.
 
 import { getSettings } from "../lib/settings.js";
-import { getMenu } from "../lib/square.js";
+import { getMenu, getLocationId } from "../lib/square.js";
 
 // Confirmed by Jordan. Keyed by JS Date.getDay(): 0 Sun, 1 Mon ... 6 Sat.
 // Monday and Tuesday aren't listed here at all, meaning closed.
@@ -28,9 +28,22 @@ export async function onRequestGet({ env }) {
   // charged.
   const menu = await getMenu(env);
 
+  // In production this comes from whichever Square account is actually
+  // connected (see lib/square.js), not a hardcoded env var, so it can
+  // never point at the wrong location. If nobody's connected Square yet,
+  // don't 500 this whole endpoint over it, every customer page depends
+  // on /api/config loading, null just means the wallet/card buttons
+  // won't have anywhere to mount until it's connected.
+  let squareLocationId;
+  try {
+    squareLocationId = await getLocationId(env);
+  } catch (e) {
+    squareLocationId = null;
+  }
+
   return Response.json({
     squareApplicationId: env.SQUARE_APPLICATION_ID,
-    squareLocationId: env.SQUARE_LOCATION_ID,
+    squareLocationId,
     squareEnv: env.SQUARE_ENV || "sandbox",
     tiers: {
       tier_1: { name: settings.tier_1_name, minutes: Number(settings.tier_1_minutes), pricePence: Number(settings.tier_1_price_pence) },

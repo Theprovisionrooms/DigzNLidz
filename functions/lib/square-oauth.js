@@ -29,6 +29,30 @@ function redirectUri(env) {
   return `${env.SITE_URL}/api/oauth/callback`;
 }
 
+// Reads the connected merchant's own location id straight from Square,
+// rather than trusting a hand-typed env var to be right. Digz N' Lidz is
+// a single physical venue, so this just takes the first ACTIVE location
+// Square returns; if that ever stops being true (a second site opens)
+// this'll need to become a real choice instead of "the first one".
+async function fetchPrimaryLocationId(accessToken) {
+  const res = await fetch("https://connect.squareup.com/v2/locations", {
+    headers: {
+      "Square-Version": "2025-01-23",
+      "Authorization": `Bearer ${accessToken}`,
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.errors?.[0]?.detail || "Couldn't read locations from Square");
+  }
+  const locations = data.locations || [];
+  const active = locations.find((l) => l.status === "ACTIVE") || locations[0];
+  if (!active) {
+    throw new Error("Connected Square account has no locations on it");
+  }
+  return active.id;
+}
+
 // Builds the link that sends a staff member to Square's own "Allow access"
 // screen. state is a random, one-time value the caller stores in a cookie
 // and checks again in the callback, standard OAuth CSRF protection.
@@ -61,11 +85,17 @@ export async function exchangeCodeForToken(env, code) {
   if (!res.ok) {
     throw new Error(data?.errors?.[0]?.detail || data?.message || "Square OAuth token exchange failed");
   }
+
+  // Grab the real location id at connect time, same moment we've got a
+  // fresh access token in hand, so it's never a separate manual step.
+  const locationId = await fetchPrimaryLocationId(data.access_token);
+
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
     expiresAt: data.expires_at,
     merchantId: data.merchant_id,
+    locationId,
   };
 }
 
@@ -94,19 +124,20 @@ async function refreshAccessToken(env, refreshToken) {
   };
 }
 
-export async function saveTokens(db, { accessToken, refreshToken, expiresAt, merchantId }) {
+export async function saveTokens(db, { accessToken, refreshToken, expiresAt, merchantId, locationId }) {
   await db
     .prepare(
-      `INSERT INTO square_oauth (id, access_token, refresh_token, expires_at, merchant_id, updated_at)
-       VALUES (1, ?, ?, ?, ?, datetime('now'))
+      `INSERT INTO square_oauth (id, access_token, refresh_token, expires_at, merchant_id, location_id, updated_at)
+       VALUES (1, ?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(id) DO UPDATE SET
          access_token = excluded.access_token,
          refresh_token = excluded.refresh_token,
          expires_at = excluded.expires_at,
          merchant_id = excluded.merchant_id,
+         location_id = excluded.location_id,
          updated_at = excluded.updated_at`
     )
-    .bind(accessToken, refreshToken, expiresAt, merchantId)
+    .bind(accessToken, refreshToken, expiresAt, merchantId, locationId)
     .run();
 }
 
@@ -118,6 +149,7 @@ export async function getStoredTokens(db) {
     refreshToken: row.refresh_token,
     expiresAt: row.expires_at,
     merchantId: row.merchant_id,
+    locationId: row.location_id,
   };
 }
 
@@ -144,7 +176,9 @@ export async function getValidAccessToken(env) {
     return stored.accessToken;
   }
 
+  // A token refresh never touches location, just carry the one we
+  // already have forward so it doesn't get wiped out on every refresh.
   const refreshed = await refreshAccessToken(env, stored.refreshToken);
-  await saveTokens(env.DB, refreshed);
+  await saveTokens(env.DB, { ...refreshed, locationId: stored.locationId });
   return refreshed.accessToken;
 }
