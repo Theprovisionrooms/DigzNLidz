@@ -67,7 +67,12 @@ function exceedsCapacity(existingIntervals, newIntervals) {
 async function applyDiscount(db, code, amountPence) {
   if (!code) return { finalAmountPence: amountPence, discountCode: null };
 
-  const discount = await db.prepare(`SELECT * FROM discount_codes WHERE code = ?`).bind(code).first();
+  // Codes are always stored upper-cased (see dashboard/discount-codes.js),
+  // but the customer's typed it into a plain text box, so normalise
+  // before the lookup or a valid code in lowercase just silently "isn't
+  // found".
+  const normalizedCode = code.trim().toUpperCase();
+  const discount = await db.prepare(`SELECT * FROM discount_codes WHERE code = ?`).bind(normalizedCode).first();
   if (!discount) return { finalAmountPence: amountPence, discountCode: null, error: "Discount code not found" };
   if (discount.expiry && new Date(discount.expiry) < new Date()) {
     return { finalAmountPence: amountPence, discountCode: null, error: "Discount code expired" };
