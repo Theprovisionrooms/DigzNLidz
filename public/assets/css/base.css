@@ -135,6 +135,20 @@ button.secondary {
   border-bottom: 1px solid #3a3530;
 }
 
+.basket-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid #3a3530;
+  font-weight: 600;
+}
+
+.basket-total span:last-child {
+  color: var(--yellow);
+}
+
 .qty-controls {
   display: flex;
   align-items: center;

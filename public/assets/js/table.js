@@ -37,13 +37,22 @@ async function init() {
   render();
 }
 
+// Basket total pence, from the same config.menu/cart the customer's
+// looking at. Display only, purely cosmetic, the server always re-prices
+// from its own copy of the menu before charging anything (see order.js).
+function basketTotalPence() {
+  return config.menu
+    .filter((m) => cart[m.id] > 0)
+    .reduce((sum, m) => sum + m.pricePence * cart[m.id], 0);
+}
+
 function render() {
   const rows = config.menu.map((item) => `
     <div class="item-row">
       <div>${item.name} · £${(item.pricePence / 100).toFixed(2)}</div>
       <div class="qty-controls">
         <button data-item="${item.id}" data-dir="-1">-</button>
-        <span id="qty-${item.id}">0</span>
+        <span id="qty-${item.id}">${cart[item.id] || 0}</span>
         <button data-item="${item.id}" data-dir="1">+</button>
       </div>
     </div>
@@ -53,6 +62,7 @@ function render() {
     <div class="card">
       <h2>Order to your table</h2>
       ${rows}
+      <div class="basket-total"><span>Total</span><span id="basket-total-amount">£${(basketTotalPence() / 100).toFixed(2)}</span></div>
       <button id="order-submit">Order</button>
       <div id="card-container"></div>
       <div id="order-error" class="error"></div>
@@ -69,6 +79,7 @@ function bindHandlers() {
       const dir = Number(btn.dataset.dir);
       cart[id] = Math.max(0, (cart[id] || 0) + dir);
       document.getElementById(`qty-${id}`).textContent = cart[id];
+      document.getElementById("basket-total-amount").textContent = `£${(basketTotalPence() / 100).toFixed(2)}`;
     });
   });
 
@@ -85,9 +96,7 @@ function bindHandlers() {
 
     // Shown to the customer for the card form's amount only, the server
     // re-prices every item itself before charging anything.
-    const totalPence = config.menu
-      .filter((m) => cart[m.id] > 0)
-      .reduce((sum, m) => sum + m.pricePence * cart[m.id], 0);
+    const totalPence = basketTotalPence();
 
     try {
       await collectCardAndSubmit(async (sourceId) => {

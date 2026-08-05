@@ -30,7 +30,7 @@ export async function onRequestGet({ env }) {
 
   return Response.json({
     squareApplicationId: env.SQUARE_APPLICATION_ID,
-    squareLocationId: env.SQUARE_LOCATION_ID_PUBLIC,
+    squareLocationId: env.SQUARE_LOCATION_ID,
     squareEnv: env.SQUARE_ENV || "sandbox",
     tiers: {
       tier_1: { name: settings.tier_1_name, minutes: Number(settings.tier_1_minutes), pricePence: Number(settings.tier_1_price_pence) },

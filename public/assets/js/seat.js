@@ -435,6 +435,15 @@ async function collectCardAndSubmit(onToken, amountPence) {
 // pricing themselves in Square without needing a code change.
 const cart = {};
 
+// Basket total pence, from the same config.menu/cart the customer's
+// looking at. Display only, purely cosmetic, the server always re-prices
+// from its own copy of the menu before charging anything (see order.js).
+function basketTotalPence() {
+  return config.menu
+    .filter((m) => cart[m.id] > 0)
+    .reduce((sum, m) => sum + m.pricePence * cart[m.id], 0);
+}
+
 function renderMenu() {
   const rows = config.menu.map((item) => `
     <div class="item-row">
@@ -451,6 +460,7 @@ function renderMenu() {
     <div class="card">
       <h2>Order to your seat</h2>
       ${rows}
+      <div class="basket-total"><span>Total</span><span id="basket-total-amount">£${(basketTotalPence() / 100).toFixed(2)}</span></div>
       <button id="order-submit">Order</button>
       <div id="order-container"></div>
       <div id="order-error" class="error"></div>
@@ -465,6 +475,7 @@ function bindMenuHandlers() {
       const dir = Number(btn.dataset.dir);
       cart[id] = Math.max(0, (cart[id] || 0) + dir);
       document.getElementById(`qty-${id}`).textContent = cart[id];
+      document.getElementById("basket-total-amount").textContent = `£${(basketTotalPence() / 100).toFixed(2)}`;
     });
   });
 
@@ -480,9 +491,7 @@ function bindMenuHandlers() {
 
     // Shown to the customer for the card form's amount only, the server
     // re-prices every item itself before charging anything.
-    const totalPence = config.menu
-      .filter((m) => cart[m.id] > 0)
-      .reduce((sum, m) => sum + m.pricePence * cart[m.id], 0);
+    const totalPence = basketTotalPence();
     const cardOnFile = !!currentSession?.cardOnFile;
 
     try {
