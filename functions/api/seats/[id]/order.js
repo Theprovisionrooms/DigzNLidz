@@ -61,10 +61,14 @@ export async function onRequestPost({ params, request, env }) {
     ? await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`).bind(seat.current_session_id).first()
     : null;
 
-  // Same check as extend.js, see migration 0016. A seat with no active
-  // session (session is null) has nothing to check a token against, an
-  // order placed there just isn't tied to any session, same as before.
-  if (session?.access_token && session.access_token !== sessionToken) {
+  // Claim-on-first-touch for staff-started sessions, same as extend.js.
+  let claimedToken = null;
+  if (session && !session.access_token) {
+    claimedToken = crypto.randomUUID();
+    await env.DB.prepare(`UPDATE sessions SET access_token = ? WHERE id = ? AND access_token IS NULL`)
+      .bind(claimedToken, session.id)
+      .run();
+  } else if (session?.access_token && session.access_token !== sessionToken) {
     return Response.json({ error: "this session isn't yours" }, { status: 403 });
   }
 
@@ -125,5 +129,5 @@ export async function onRequestPost({ params, request, env }) {
     .bind(seatId, seat?.current_session_id || null, JSON.stringify(cleanItems), totalPence, payment.providerRef)
     .run();
 
-  return Response.json({ orderId: insert.meta.last_row_id, status: "placed" });
+  return Response.json({ orderId: insert.meta.last_row_id, status: "placed", sessionToken: claimedToken || sessionToken });
 }

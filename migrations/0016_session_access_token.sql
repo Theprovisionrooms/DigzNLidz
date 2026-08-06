@@ -4,21 +4,27 @@
 -- by changing the number. Once a session has a saved card
 -- (square_card_id), extend and order charge it with no re-entry of card
 -- details, so this wasn't just "annoying", it meant a stranger could
--- trigger real charges on someone else's card. access_token is generated
--- when a session starts through a solo guest-initiated flow
--- (seats/[id]/start.js, seats/[id]/redeem-held.js) and returned only to
--- that guest's own browser; extend/order/end then require it to match.
+-- trigger real charges on someone else's card.
 --
--- Two flows deliberately don't set this, both known residual gaps rather
--- than oversights:
+-- access_token is generated in one of two ways:
+--   - Solo guest-initiated sessions (seats/[id]/start.js,
+--     seats/[id]/redeem-held.js): generated the moment the session
+--     starts, returned only to that guest's own browser.
 --   - Staff-started sessions (bookings/[id]/redeem-seat.js,
---     dashboard/claim-seat.js), no clean way to hand a token to the guest
---     in that flow.
---   - Group sessions (seats/group/start.js), the group flow is designed
---     so any member can order or extend from any of the group's seats
---     from their own phone once one person's paid, a token only ever
---     reaches whichever single device completed the group payment, so
---     enforcing it there would lock every other member out of their own
---     paid-for seat rather than protect it.
+--     dashboard/claim-seat.js), which have no way to hand a token to the
+--     guest at creation time: claimed by whichever device is first to
+--     call extend/order on that session, which in practice is the real
+--     guest's own first tap right after staff hand the seat over. Closes
+--     the guessing window down to "before the real guest's first
+--     interaction" rather than leaving it open indefinitely.
+--
+-- Group sessions (seats/group/start.js) deliberately don't use this at
+-- all: the group flow is designed so any member can order or extend from
+-- any of the group's seats, from their own phone, once one person's
+-- paid. A token only ever reaches whichever device makes the request, so
+-- enforcing or claiming one per seat would lock a member out of ordering
+-- through a seat they didn't personally claim first, which is a real
+-- (if narrow, and accepted) trade-off against the intended group
+-- experience, not something this migration tries to solve.
 
 ALTER TABLE sessions ADD COLUMN access_token TEXT;

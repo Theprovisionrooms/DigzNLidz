@@ -263,6 +263,8 @@ function renderExtensionPrompt() {
           const err = await res.json();
           throw new Error(err.error || "Payment failed");
         }
+        const data = await res.json();
+        setSessionToken(data.sessionToken);
         refresh();
       } else {
         await collectCardAndSubmit(async (sourceId) => {
@@ -275,6 +277,8 @@ function renderExtensionPrompt() {
             const err = await res.json();
             throw new Error(err.error || "Payment failed");
           }
+          const data = await res.json();
+          setSessionToken(data.sessionToken);
           refresh();
         }, config.extension.pricePence);
       }
@@ -531,6 +535,8 @@ function bindMenuHandlers() {
           const err = await res.json();
           throw new Error(err.error || "Order failed");
         }
+        const data = await res.json();
+        setSessionToken(data.sessionToken);
         for (const key in cart) cart[key] = 0;
         errorEl.style.color = "var(--yellow)";
         errorEl.textContent = "Order placed, on its way!";
@@ -551,6 +557,8 @@ function bindMenuHandlers() {
             const err = await res.json();
             throw new Error(err.error || "Order failed");
           }
+          const data = await res.json();
+          setSessionToken(data.sessionToken);
           for (const key in cart) cart[key] = 0;
         }, totalPence);
         // A card was saved on file by this order (see order.js), so from

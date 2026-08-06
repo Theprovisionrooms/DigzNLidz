@@ -32,10 +32,20 @@ export async function onRequestPost({ params, request, env }) {
     .first();
 
   // access_token is only set on sessions started through a guest-facing
-  // flow (start.js, redeem-held.js), see migration 0016. A staff-started
-  // session (redeem-seat.js, dashboard/claim-seat.js) has no token, that's
-  // a known separate gap, not something checked here.
-  if (session.access_token && session.access_token !== sessionToken) {
+  // flow (start.js, redeem-held.js), see migration 0016. Staff-started
+  // sessions (redeem-seat.js, dashboard/claim-seat.js) start with none,
+  // instead this claims one for whichever device is first to actually
+  // touch the session, that's the real guest's own first tap right after
+  // staff hand the seat over, so nothing changes for them, it just closes
+  // the seatId-guessing window down to "before the real guest's first
+  // interaction" instead of leaving it open indefinitely.
+  let claimedToken = null;
+  if (!session.access_token) {
+    claimedToken = crypto.randomUUID();
+    await env.DB.prepare(`UPDATE sessions SET access_token = ? WHERE id = ? AND access_token IS NULL`)
+      .bind(claimedToken, session.id)
+      .run();
+  } else if (session.access_token !== sessionToken) {
     return Response.json({ error: "this session isn't yours" }, { status: 403 });
   }
 
@@ -120,5 +130,5 @@ export async function onRequestPost({ params, request, env }) {
 
   await env.DB.prepare(`UPDATE seats SET status = 'active' WHERE id = ?`).bind(seatId).run();
 
-  return Response.json({ endsAt: newEndsAt.toISOString() });
+  return Response.json({ endsAt: newEndsAt.toISOString(), sessionToken: claimedToken || sessionToken });
 }
