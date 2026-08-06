@@ -125,7 +125,19 @@ async function loadSquareStatus() {
 
   if (data.connected) {
     const expires = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString("en-GB") : "unknown";
+    if (!data.locationId) {
+      // Connected, but on the SQUARE_LOCATION_ID fallback rather than the
+      // actually-connected merchant's real location, see square-status.js.
+      // Safe to keep trading on, but the fix isn't fully in effect until
+      // this gets clicked once more.
+      statusEl.innerHTML = `Connected to Square, but still running on the fallback location, not the actually-connected one. Click reconnect once to fix this properly. <small>(Token valid until ${expires}.)</small>`;
+      statusEl.style.color = "#e0c98e";
+      connectBtn.textContent = "Reconnect to Square";
+      connectBtn.style.display = "inline-block";
+      return;
+    }
     statusEl.textContent = `Connected to Square. Token refreshes automatically, currently valid until ${expires}.`;
+    statusEl.style.color = "";
     connectBtn.style.display = "none";
   } else {
     statusEl.textContent = "Not connected to Square yet. Live payments won't work until this is done.";

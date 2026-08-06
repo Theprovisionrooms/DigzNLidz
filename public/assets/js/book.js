@@ -3,6 +3,12 @@ let hours = null;
 let tiers = null;
 const tierCounts = { tier_1: 0, tier_2: 0, tier_3: 0 };
 
+// Date picker shouldn't offer a date that's already gone, and the London
+// calendar date is what matters here, not whatever date the browser or
+// device thinks "today" is if either's clock is off or set to another
+// timezone.
+document.getElementById("bookingDate").min = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+
 async function loadConfig() {
   try {
     const res = await fetch("/api/config");

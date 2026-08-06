@@ -11,9 +11,47 @@
 const PROTECT_WINDOW_MINUTES = 60;
 const TIERS = ["tier_1", "tier_2", "tier_3"];
 
+// Same issue and same fix as workers/session-expiry-cron.js: Cloudflare
+// Pages Functions run in UTC too, but slot_time is UK wall-clock time,
+// so comparing it against a plain UTC Date used to be off by the UK's
+// current offset from UTC, an hour during BST. That's roughly Apr-Oct,
+// so most of the trading season, and it's what this exact function uses
+// to decide how many free seats need to stay reserved for bookings due
+// soon, i.e. it could tell a walk-in group seats are free when they're
+// about to be needed for a paid booking, or hold seats back that didn't
+// need holding yet. This can't share code with the cron worker, they're
+// separate Cloudflare deploy targets with separate builds (see
+// HANDOVER.md), so the same small helpers are duplicated here.
+function londonOffsetMinutes(date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/London",
+    hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  const asUtc = Date.UTC(
+    Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+    parts.hour === "24" ? 0 : Number(parts.hour), Number(parts.minute), Number(parts.second)
+  );
+  return Math.round((asUtc - date.getTime()) / 60000);
+}
+
+function londonDateString(date) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
+}
+
+function londonSlotToUtcDate(dateStr, timeStr) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hour, minute] = timeStr.split(":").map(Number);
+  const guessUtc = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  return new Date(guessUtc.getTime() - londonOffsetMinutes(guessUtc) * 60000);
+}
+
 export async function getSeatAvailability(db) {
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
+  const today = londonDateString(now);
   const protectCutoff = new Date(now.getTime() + PROTECT_WINDOW_MINUTES * 60 * 1000);
 
   const { results: dueBookings } = await db.prepare(
@@ -26,9 +64,7 @@ export async function getSeatAvailability(db) {
 
   let reserved = 0;
   for (const booking of dueBookings) {
-    const [h, m] = booking.slot_time.split(":").map(Number);
-    const slotDate = new Date(now);
-    slotDate.setHours(h, m, 0, 0);
+    const slotDate = londonSlotToUtcDate(today, booking.slot_time);
     if (slotDate > protectCutoff || slotDate < now) continue;
 
     const breakdown = JSON.parse(booking.tier_breakdown_json || "{}");

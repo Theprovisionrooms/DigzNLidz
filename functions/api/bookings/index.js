@@ -32,6 +32,23 @@ function checkWithinHours(bookingDate, slotTime) {
   return { ok: true };
 }
 
+// The date picker on /book has a min= set so it won't offer a past date,
+// but that's client-side only, nothing stopped someone (or a direct
+// hit on this endpoint) paying for a slot that's already gone. Compared
+// in Europe/London terms, not UTC or the server runtime's own clock,
+// same reasoning as the cron worker's timezone handling.
+function checkNotPast(bookingDate, slotTime) {
+  const now = new Date();
+  const todayLondon = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(now);
+  const nowTimeLondon = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(now);
+  if (bookingDate < todayLondon || (bookingDate === todayLondon && slotTime <= nowTimeLondon)) {
+    return { ok: false, error: "That date or time has already passed, pick an upcoming slot." };
+  }
+  return { ok: true };
+}
+
 // Turns a slot_time + { tier_1: n, tier_2: n, tier_3: n } breakdown into
 // one [start, end, seats] interval per tier actually used, in minutes
 // from midnight. Different tiers in the same booking can run different
@@ -107,6 +124,11 @@ export async function onRequestPost({ request, env }) {
   const hoursCheck = checkWithinHours(bookingDate, slotTime);
   if (!hoursCheck.ok) {
     return Response.json({ error: hoursCheck.error }, { status: 400 });
+  }
+
+  const notPastCheck = checkNotPast(bookingDate, slotTime);
+  if (!notPastCheck.ok) {
+    return Response.json({ error: notPastCheck.error }, { status: 400 });
   }
 
   // Real prices (and session lengths, for the capacity check below) come

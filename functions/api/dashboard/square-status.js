@@ -25,5 +25,14 @@ export async function onRequestGet({ request, env }) {
     connected: true,
     mode: "production",
     expiresAt: tokens.expiresAt,
+    // location_id was added in migration 0013, after this connection was
+    // first made, so an existing token row can be connected fine and
+    // still have no location_id stored (getLocationId in square.js falls
+    // back to the SQUARE_LOCATION_ID env var in that case, which is safe,
+    // but it means the fix that migration was for hasn't actually taken
+    // effect yet). Nothing surfaced this distinction before, so there was
+    // no way for staff to know a reconnect was still needed, the button
+    // just disappears the moment connected is true regardless.
+    locationId: tokens.locationId || null,
   });
 }

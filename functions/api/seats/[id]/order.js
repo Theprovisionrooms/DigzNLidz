@@ -49,6 +49,14 @@ export async function onRequestPost({ params, request, env }) {
     .bind(seatId)
     .first();
 
+  // extend.js already guards against a seat that doesn't exist, this one
+  // didn't, it would still go ahead and charge a real card for an order
+  // tied to a seat_id that isn't real, with nothing to actually deliver
+  // it to and no session to trace it back to.
+  if (!seat) {
+    return Response.json({ error: "seat not found" }, { status: 404 });
+  }
+
   const session = seat?.current_session_id
     ? await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`).bind(seat.current_session_id).first()
     : null;
