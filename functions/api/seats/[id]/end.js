@@ -9,8 +9,10 @@
 
 import { disableCard } from "../../../lib/square.js";
 
-export async function onRequestPost({ params, env }) {
+export async function onRequestPost({ params, request, env }) {
   const seatId = params.id;
+  const body = await request.json().catch(() => ({}));
+  const { sessionToken } = body;
 
   const seat = await env.DB.prepare(`SELECT * FROM seats WHERE id = ?`).bind(seatId).first();
   if (!seat) return Response.json({ error: "seat not found" }, { status: 404 });
@@ -19,6 +21,11 @@ export async function onRequestPost({ params, env }) {
     const session = await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`)
       .bind(seat.current_session_id)
       .first();
+
+    // Same check as extend.js/order.js, see migration 0016.
+    if (session?.access_token && session.access_token !== sessionToken) {
+      return Response.json({ error: "this session isn't yours" }, { status: 403 });
+    }
 
     if (session?.square_card_id) {
       await disableCard(env, session.square_card_id);

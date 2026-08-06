@@ -38,7 +38,7 @@ function londonOffsetMinutes(date) {
   return Math.round((asUtc - date.getTime()) / 60000);
 }
 
-function londonDateString(date) {
+export function londonDateString(date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
 }
 

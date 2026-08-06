@@ -17,7 +17,7 @@ import {
 export async function onRequestPost({ params, request, env }) {
   const seatId = params.id;
   const body = await request.json();
-  const { items, sourceId } = body; // items: [{ id, quantity }], anything else from the client is ignored
+  const { items, sourceId, sessionToken } = body; // items: [{ id, quantity }], anything else from the client is ignored
 
   if (!Array.isArray(items) || items.length === 0) {
     return Response.json({ error: "items required" }, { status: 400 });
@@ -60,6 +60,13 @@ export async function onRequestPost({ params, request, env }) {
   const session = seat?.current_session_id
     ? await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`).bind(seat.current_session_id).first()
     : null;
+
+  // Same check as extend.js, see migration 0016. A seat with no active
+  // session (session is null) has nothing to check a token against, an
+  // order placed there just isn't tied to any session, same as before.
+  if (session?.access_token && session.access_token !== sessionToken) {
+    return Response.json({ error: "this session isn't yours" }, { status: 403 });
+  }
 
   const totalPence = cleanItems.reduce((sum, item) => sum + item.pricePence * item.quantity, 0);
 

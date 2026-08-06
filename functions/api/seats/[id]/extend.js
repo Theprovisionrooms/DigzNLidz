@@ -20,11 +20,23 @@ import {
 export async function onRequestPost({ params, request, env }) {
   const seatId = params.id;
   const body = await request.json().catch(() => ({}));
-  const { sourceId } = body;
+  const { sourceId, sessionToken } = body;
 
   const seat = await env.DB.prepare(`SELECT * FROM seats WHERE id = ?`).bind(seatId).first();
   if (!seat || !seat.current_session_id) {
     return Response.json({ error: "no active session on this seat" }, { status: 404 });
+  }
+
+  const session = await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`)
+    .bind(seat.current_session_id)
+    .first();
+
+  // access_token is only set on sessions started through a guest-facing
+  // flow (start.js, redeem-held.js), see migration 0016. A staff-started
+  // session (redeem-seat.js, dashboard/claim-seat.js) has no token, that's
+  // a known separate gap, not something checked here.
+  if (session.access_token && session.access_token !== sessionToken) {
+    return Response.json({ error: "this session isn't yours" }, { status: 403 });
   }
 
   // If seats are already tight for a paid booking due within the next
@@ -42,10 +54,6 @@ export async function onRequestPost({ params, request, env }) {
       { status: 409 }
     );
   }
-
-  const session = await env.DB.prepare(`SELECT * FROM sessions WHERE id = ?`)
-    .bind(seat.current_session_id)
-    .first();
 
   const extension = await getExtensionConfig(env.DB);
 

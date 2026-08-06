@@ -4,12 +4,18 @@
 // enquiries, and live seat status.
 
 import { isAuthenticated, unauthorizedResponse } from "../../lib/auth.js";
+import { londonDateString } from "../../lib/capacity.js";
 
 export async function onRequestGet({ request, env }) {
   if (!(await isAuthenticated(request, env))) return unauthorizedResponse();
 
   const db = env.DB;
-  const today = new Date().toISOString().slice(0, 10);
+  // Same Europe/London vs UTC issue fixed elsewhere (cron worker,
+  // capacity.js): a plain toISOString() date is UTC's calendar date, not
+  // the UK's, they only actually diverge in the hour between midnight and
+  // 1am UK time, but there's no reason for this panel to disagree with
+  // everything else once that's been fixed properly everywhere else.
+  const today = londonDateString(new Date());
 
   const [
     bookingsToday,

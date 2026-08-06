@@ -40,11 +40,14 @@ export async function onRequestPost({ params, env }) {
   const tierConfig = await getTierConfig(env.DB, tier);
   const startedAt = new Date();
   const endsAt = new Date(startedAt.getTime() + tierConfig.minutes * 60 * 1000);
+  // Same as start.js, see migration 0016: only the guest who actually
+  // scanned this held seat ever sees this token.
+  const accessToken = crypto.randomUUID();
 
   const insert = await env.DB.prepare(
-    `INSERT INTO sessions (seat_id, tier, started_at, ends_at) VALUES (?, ?, ?, ?)`
+    `INSERT INTO sessions (seat_id, tier, started_at, ends_at, access_token) VALUES (?, ?, ?, ?, ?)`
   )
-    .bind(seatId, tier, startedAt.toISOString(), endsAt.toISOString())
+    .bind(seatId, tier, startedAt.toISOString(), endsAt.toISOString(), accessToken)
     .run();
   const sessionId = insert.meta.last_row_id;
 
@@ -65,5 +68,5 @@ export async function onRequestPost({ params, env }) {
     .bind(JSON.stringify(redeemed), booking.id)
     .run();
 
-  return Response.json({ sessionId, endsAt: endsAt.toISOString() });
+  return Response.json({ sessionId, endsAt: endsAt.toISOString(), sessionToken: accessToken });
 }

@@ -92,12 +92,16 @@ export async function onRequestPost({ params, request, env }) {
 
   const startedAt = new Date();
   const endsAt = new Date(startedAt.getTime() + tierConfig.minutes * 60 * 1000);
+  // Generated here and only ever returned to this same request, so only
+  // the browser that actually started this session ever sees it. See
+  // migration 0016 for why this exists.
+  const accessToken = crypto.randomUUID();
 
   const insert = await env.DB.prepare(
-    `INSERT INTO sessions (seat_id, tier, started_at, ends_at, square_customer_id, square_card_id)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO sessions (seat_id, tier, started_at, ends_at, square_customer_id, square_card_id, access_token)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(seatId, tier, startedAt.toISOString(), endsAt.toISOString(), customerId, cardId)
+    .bind(seatId, tier, startedAt.toISOString(), endsAt.toISOString(), customerId, cardId, accessToken)
     .run();
 
   const sessionId = insert.meta.last_row_id;
@@ -106,5 +110,5 @@ export async function onRequestPost({ params, request, env }) {
     .bind(sessionId, seatId)
     .run();
 
-  return Response.json({ sessionId, endsAt: endsAt.toISOString() });
+  return Response.json({ sessionId, endsAt: endsAt.toISOString(), sessionToken: accessToken });
 }

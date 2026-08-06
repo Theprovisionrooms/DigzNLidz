@@ -83,6 +83,16 @@ export async function onRequestPost({ request, env }) {
   const endsAt = new Date(startedAt.getTime() + tierConfig.minutes * 60 * 1000);
   const sessionIds = [];
 
+  // Deliberately no access_token here, unlike start.js/redeem-held.js
+  // (migration 0016). The group flow is designed so any member can order
+  // or extend from any of the group's seats, from their own phone, once
+  // one person's paid, see the "food and drink orders from any of your
+  // seats" line in renderConfirmation() below. A token only ever reaches
+  // whichever single device completed this request, so enforcing it here
+  // would lock every other member out of their own paid-for seat, not
+  // just protect it. Same residual gap as staff-started sessions, kept
+  // consistent with the group booking's actual intended design rather
+  // than solved by this migration.
   for (const seatId of seatIds) {
     const insert = await env.DB.prepare(
       `INSERT INTO sessions (seat_id, tier, started_at, ends_at, square_customer_id, square_card_id)

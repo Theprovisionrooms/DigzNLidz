@@ -1,0 +1,24 @@
+-- seatId alone was enough to call extend/order/end on any seat's session,
+-- there are only 16 seats and the seat page takes the id straight from
+-- the URL (?seat=N), so anyone could act on someone else's session just
+-- by changing the number. Once a session has a saved card
+-- (square_card_id), extend and order charge it with no re-entry of card
+-- details, so this wasn't just "annoying", it meant a stranger could
+-- trigger real charges on someone else's card. access_token is generated
+-- when a session starts through a solo guest-initiated flow
+-- (seats/[id]/start.js, seats/[id]/redeem-held.js) and returned only to
+-- that guest's own browser; extend/order/end then require it to match.
+--
+-- Two flows deliberately don't set this, both known residual gaps rather
+-- than oversights:
+--   - Staff-started sessions (bookings/[id]/redeem-seat.js,
+--     dashboard/claim-seat.js), no clean way to hand a token to the guest
+--     in that flow.
+--   - Group sessions (seats/group/start.js), the group flow is designed
+--     so any member can order or extend from any of the group's seats
+--     from their own phone once one person's paid, a token only ever
+--     reaches whichever single device completed the group payment, so
+--     enforcing it there would lock every other member out of their own
+--     paid-for seat rather than protect it.
+
+ALTER TABLE sessions ADD COLUMN access_token TEXT;

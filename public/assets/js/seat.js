@@ -5,6 +5,21 @@ const seatId = new URLSearchParams(location.search).get("seat");
 const app = document.getElementById("app");
 document.getElementById("seat-title").textContent = seatId ? `Seat ${seatId}` : "Seat";
 
+// Per-session secret, see migration 0016. Set once start.js or
+// redeem-held.js hands one back, sent on every extend/order/end call so
+// this seat's session can only be acted on from the browser that
+// actually started it. localStorage rather than sessionStorage: a guest
+// backgrounding or closing their phone browser mid-visit and coming back
+// shouldn't get locked out of their own still-active session. An old
+// token left over from a previous visit is harmless either way, once a
+// seat starts a new session the old token just stops matching.
+function getSessionToken() {
+  return localStorage.getItem(`dnl_token_${seatId}`) || null;
+}
+function setSessionToken(token) {
+  if (token) localStorage.setItem(`dnl_token_${seatId}`, token);
+}
+
 let config = null;
 let squarePayments = null;
 let pollTimer = null;
@@ -106,6 +121,8 @@ async function redeemHeld() {
       app.innerHTML = `<div class="card error">${err.error || "Couldn't start your session, ask a member of staff to help."}</div>`;
       return;
     }
+    const data = await res.json();
+    setSessionToken(data.sessionToken);
   } catch (e) {
     app.innerHTML = `<div class="card error">Couldn't start your session, ask a member of staff to help.</div>`;
     return;
@@ -156,6 +173,8 @@ async function startTier(tierKey) {
       errorEl.textContent = err.error || "Something went wrong, try again.";
       return;
     }
+    const data = await res.json();
+    setSessionToken(data.sessionToken);
     refresh();
     return;
   }
@@ -171,6 +190,8 @@ async function startTier(tierKey) {
         const err = await res.json();
         throw new Error(err.error || "Payment failed");
       }
+      const data = await res.json();
+      setSessionToken(data.sessionToken);
       refresh();
     }, tier.pricePence);
   } catch (e) {
@@ -236,7 +257,7 @@ function renderExtensionPrompt() {
         const res = await fetch(`/api/seats/${seatId}/extend`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ sessionToken: getSessionToken() }),
         });
         if (!res.ok) {
           const err = await res.json();
@@ -248,7 +269,7 @@ function renderExtensionPrompt() {
           const res = await fetch(`/api/seats/${seatId}/extend`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sourceId }),
+            body: JSON.stringify({ sourceId, sessionToken: getSessionToken() }),
           });
           if (!res.ok) {
             const err = await res.json();
@@ -272,7 +293,11 @@ async function endSession() {
   clearInterval(window.__countdownInterval);
   app.innerHTML = `<div class="card"><h2>Thanks for playing</h2><p>Scan again any time to start a new session.</p></div>`;
   try {
-    await fetch(`/api/seats/${seatId}/end`, { method: "POST" });
+    await fetch(`/api/seats/${seatId}/end`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionToken: getSessionToken() }),
+    });
   } catch (e) {
     // Seat page already shows the thank-you message either way, this is
     // just cleanup, no need to surface a network hiccup to the customer.
@@ -500,7 +525,7 @@ function bindMenuHandlers() {
         const res = await fetch(`/api/seats/${seatId}/order`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items }),
+          body: JSON.stringify({ items, sessionToken: getSessionToken() }),
         });
         if (!res.ok) {
           const err = await res.json();
@@ -520,7 +545,7 @@ function bindMenuHandlers() {
           const res = await fetch(`/api/seats/${seatId}/order`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items, sourceId }),
+            body: JSON.stringify({ items, sourceId, sessionToken: getSessionToken() }),
           });
           if (!res.ok) {
             const err = await res.json();
