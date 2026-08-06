@@ -6,25 +6,23 @@
 -- details, so this wasn't just "annoying", it meant a stranger could
 -- trigger real charges on someone else's card.
 --
--- access_token is generated in one of two ways:
---   - Solo guest-initiated sessions (seats/[id]/start.js,
---     seats/[id]/redeem-held.js): generated the moment the session
---     starts, returned only to that guest's own browser.
+-- access_token is populated three different ways depending on how the
+-- session started:
+--   - Solo guest sessions (seats/[id]/start.js, seats/[id]/redeem-held.js):
+--     a random token generated the moment the session starts, returned
+--     only to that guest's own browser.
+--   - Group sessions (seats/group/start.js): one shared, short numeric
+--     code for the whole group rather than a per-seat token, since the
+--     group flow is designed so any member can order or extend from any
+--     of the group's seats, from their own phone. Shown once on the
+--     confirmation screen for the group to share, entered once per
+--     device on first use (see seat.js's code prompt), then remembered
+--     for every seat that device touches.
 --   - Staff-started sessions (bookings/[id]/redeem-seat.js,
---     dashboard/claim-seat.js), which have no way to hand a token to the
---     guest at creation time: claimed by whichever device is first to
---     call extend/order on that session, which in practice is the real
---     guest's own first tap right after staff hand the seat over. Closes
---     the guessing window down to "before the real guest's first
---     interaction" rather than leaving it open indefinitely.
---
--- Group sessions (seats/group/start.js) deliberately don't use this at
--- all: the group flow is designed so any member can order or extend from
--- any of the group's seats, from their own phone, once one person's
--- paid. A token only ever reaches whichever device makes the request, so
--- enforcing or claiming one per seat would lock a member out of ordering
--- through a seat they didn't personally claim first, which is a real
--- (if narrow, and accepted) trade-off against the intended group
--- experience, not something this migration tries to solve.
+--     dashboard/claim-seat.js): no token at creation, there's no clean
+--     way to hand one to the guest in that flow. Claimed instead by
+--     whichever device is first to call extend/order on that session,
+--     in practice the real guest's own first tap right after staff hand
+--     the seat over.
 
 ALTER TABLE sessions ADD COLUMN access_token TEXT;

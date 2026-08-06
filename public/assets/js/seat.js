@@ -13,11 +13,47 @@ document.getElementById("seat-title").textContent = seatId ? `Seat ${seatId}` : 
 // shouldn't get locked out of their own still-active session. An old
 // token left over from a previous visit is harmless either way, once a
 // seat starts a new session the old token just stops matching.
+//
+// Group sessions use one shared code instead of a per-seat token (see
+// group/start.js), so this falls back to a device-wide code if there's
+// no per-seat token, that's what lets a code entered once on this phone
+// keep working across any of the group's seats without asking again.
 function getSessionToken() {
-  return localStorage.getItem(`dnl_token_${seatId}`) || null;
+  return localStorage.getItem(`dnl_token_${seatId}`) || localStorage.getItem("dnl_group_code") || null;
 }
 function setSessionToken(token) {
-  if (token) localStorage.setItem(`dnl_token_${seatId}`, token);
+  if (!token) return;
+  localStorage.setItem(`dnl_token_${seatId}`, token);
+  localStorage.setItem("dnl_group_code", token);
+}
+
+// extend/order/end all need a session token, and any of them can come
+// back "this session isn't yours" the first time a device touches a
+// staff-assigned or group seat, that's expected, not an error, it just
+// means this device doesn't have the right token yet. For a staff-claimed
+// seat there's nothing to enter, claim-on-first-touch handles it
+// server-side. For a group seat, prompt once for the table code and
+// retry, then remember it for every other seat this device touches.
+async function postWithToken(url, body) {
+  const attempt = async () => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, sessionToken: getSessionToken() }),
+    });
+    return res;
+  };
+
+  let res = await attempt();
+  if (res.status === 403) {
+    const code = window.prompt("Enter your table code to order or extend from this seat:");
+    if (code) {
+      localStorage.setItem(`dnl_token_${seatId}`, code.trim());
+      localStorage.setItem("dnl_group_code", code.trim());
+      res = await attempt();
+    }
+  }
+  return res;
 }
 
 let config = null;
@@ -254,11 +290,7 @@ function renderExtensionPrompt() {
     try {
       if (cardOnFile) {
         // Card already on file for this visit, one tap, no form.
-        const res = await fetch(`/api/seats/${seatId}/extend`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionToken: getSessionToken() }),
-        });
+        const res = await postWithToken(`/api/seats/${seatId}/extend`, {});
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || "Payment failed");
@@ -268,11 +300,7 @@ function renderExtensionPrompt() {
         refresh();
       } else {
         await collectCardAndSubmit(async (sourceId) => {
-          const res = await fetch(`/api/seats/${seatId}/extend`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sourceId, sessionToken: getSessionToken() }),
-          });
+          const res = await postWithToken(`/api/seats/${seatId}/extend`, { sourceId });
           if (!res.ok) {
             const err = await res.json();
             throw new Error(err.error || "Payment failed");
@@ -526,11 +554,7 @@ function bindMenuHandlers() {
     try {
       if (cardOnFile) {
         // Card already on file for this visit, place the order straight away.
-        const res = await fetch(`/api/seats/${seatId}/order`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items, sessionToken: getSessionToken() }),
-        });
+        const res = await postWithToken(`/api/seats/${seatId}/order`, { items });
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || "Order failed");
@@ -548,11 +572,7 @@ function bindMenuHandlers() {
         const orderContainer = document.getElementById("order-container");
         orderContainer.id = "card-container"; // reuse card mount point
         await collectCardAndSubmit(async (sourceId) => {
-          const res = await fetch(`/api/seats/${seatId}/order`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items, sourceId, sessionToken: getSessionToken() }),
-          });
+          const res = await postWithToken(`/api/seats/${seatId}/order`, { items, sourceId });
           if (!res.ok) {
             const err = await res.json();
             throw new Error(err.error || "Order failed");

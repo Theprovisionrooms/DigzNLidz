@@ -83,22 +83,25 @@ export async function onRequestPost({ request, env }) {
   const endsAt = new Date(startedAt.getTime() + tierConfig.minutes * 60 * 1000);
   const sessionIds = [];
 
-  // Deliberately no access_token here, unlike start.js/redeem-held.js
-  // (migration 0016). The group flow is designed so any member can order
-  // or extend from any of the group's seats, from their own phone, once
-  // one person's paid, see the "food and drink orders from any of your
-  // seats" line in renderConfirmation() below. A token only ever reaches
-  // whichever single device completed this request, so enforcing it here
-  // would lock every other member out of their own paid-for seat, not
-  // just protect it. Same residual gap as staff-started sessions, kept
-  // consistent with the group booking's actual intended design rather
-  // than solved by this migration.
+  // One shared code for the whole group, not a per-seat token, since the
+  // group flow is designed so any member can order or extend from any of
+  // the group's seats, from their own phone, once one person's paid (see
+  // "food and drink orders from any of your seats" in renderConfirmation
+  // in group-start.js). A per-seat token could only ever reach whichever
+  // device completed this request, this way the code is shown on that
+  // device's confirmation screen for the group to share amongst
+  // themselves, entered once on each other member's own phone (see
+  // seat.js's code-entry prompt). Short and numeric since it needs to be
+  // read out loud and typed on a phone, not copy-pasted like the longer
+  // per-seat tokens elsewhere.
+  const groupCode = String(Math.floor(1000 + Math.random() * 9000));
+
   for (const seatId of seatIds) {
     const insert = await env.DB.prepare(
-      `INSERT INTO sessions (seat_id, tier, started_at, ends_at, square_customer_id, square_card_id)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO sessions (seat_id, tier, started_at, ends_at, square_customer_id, square_card_id, access_token)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-      .bind(seatId, tier, startedAt.toISOString(), endsAt.toISOString(), customerId, cardId)
+      .bind(seatId, tier, startedAt.toISOString(), endsAt.toISOString(), customerId, cardId, groupCode)
       .run();
 
     const sessionId = insert.meta.last_row_id;
@@ -109,5 +112,5 @@ export async function onRequestPost({ request, env }) {
       .run();
   }
 
-  return Response.json({ seats: seatIds, sessionIds, endsAt: endsAt.toISOString() });
+  return Response.json({ seats: seatIds, sessionIds, endsAt: endsAt.toISOString(), groupCode });
 }

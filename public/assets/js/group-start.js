@@ -116,7 +116,8 @@ async function startGroup(tierKey) {
       errorEl.textContent = err.error || "Something went wrong, ask a member of staff to help.";
       return;
     }
-    renderConfirmation();
+    const data = await res.json();
+    renderConfirmation(data.groupCode);
     return;
   }
 
@@ -131,19 +132,27 @@ async function startGroup(tierKey) {
         const err = await res.json();
         throw new Error(err.error || "Payment failed");
       }
-      renderConfirmation();
+      const data = await res.json();
+      renderConfirmation(data.groupCode);
     }, totalPence);
   } catch (e) {
     errorEl.textContent = e.message;
   }
 }
 
-function renderConfirmation() {
+function renderConfirmation(groupCode) {
+  // The device that just paid already has the code, no reason to make
+  // this one person type it back in, unlike everyone else at the table
+  // who'll be prompted once on their own phone (see seat.js).
+  localStorage.setItem("dnl_group_code", groupCode);
+  for (const id of claimedSeats) localStorage.setItem(`dnl_token_${id}`, groupCode);
+
   app.innerHTML = `
     <div class="card">
       <h2>You're all set</h2>
       <p>Your seats: <strong>${claimedSeats.join(", ")}</strong></p>
-      <p><small>Spread out and settle in, everyone's card is already on file so food and drink orders from any of your seats won't ask for payment again.</small></p>
+      <p>Your table code: <strong style="font-size:1.4em;letter-spacing:2px;">${groupCode}</strong></p>
+      <p><small>Spread out and settle in. The first time anyone in your group orders or extends from a seat, their phone will ask for this code, once, then it's remembered on that phone for the rest of the visit, and works at any of your seats. Share it with your table.</small></p>
     </div>
   `;
 }

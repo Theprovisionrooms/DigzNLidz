@@ -31,14 +31,16 @@ export async function onRequestPost({ params, request, env }) {
     .bind(seat.current_session_id)
     .first();
 
-  // access_token is only set on sessions started through a guest-facing
-  // flow (start.js, redeem-held.js), see migration 0016. Staff-started
-  // sessions (redeem-seat.js, dashboard/claim-seat.js) start with none,
-  // instead this claims one for whichever device is first to actually
-  // touch the session, that's the real guest's own first tap right after
-  // staff hand the seat over, so nothing changes for them, it just closes
-  // the seatId-guessing window down to "before the real guest's first
-  // interaction" instead of leaving it open indefinitely.
+  // Three ways a session can get here, see migration 0016:
+  //   - Solo (start.js/redeem-held.js): access_token set at creation,
+  //     checked directly below.
+  //   - Group (group/start.js): access_token is the shared table code,
+  //     shown once on the group's confirmation screen, also checked
+  //     directly below, same as solo.
+  //   - Staff-started (redeem-seat.js/claim-seat.js): no access_token at
+  //     creation, claimed here by whichever device is first to actually
+  //     touch the session, in practice the real guest's own first tap
+  //     right after staff hand the seat over.
   let claimedToken = null;
   if (!session.access_token) {
     claimedToken = crypto.randomUUID();
