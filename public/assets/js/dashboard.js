@@ -74,7 +74,8 @@ async function login() {
   });
 
   if (!res.ok) {
-    errorEl.textContent = "Incorrect password.";
+    const err = await res.json().catch(() => ({}));
+    errorEl.textContent = err.error || "Incorrect password.";
     return;
   }
 
@@ -382,11 +383,15 @@ async function redeemSeat(bookingId, tier) {
   loadDashboard();
 }
 
-// Physical layout of the RC pit: |__| — 5 seats down the left leg, 6
-// across the front, 5 up the right leg, open at the top. This ordering
-// (left top-to-bottom, front left-to-right, right top-to-bottom) is a
-// first-cut placeholder, reorder the numbers below to match the real
-// seat numbers painted on the pit.
+// Physical layout of the RC pit: |__| - 5 seats down the left leg, 6
+// across the front, 5 up the right leg, open at the top (the door side).
+// Seat positions here are used purely to draw the dashboard's pit map in
+// a sensible left/front/right shape. This ordering is authoritative, not
+// a guess at the physical layout: QR code stickers get placed on the
+// actual seats to match whatever this map says, not the other way round.
+// So there's nothing to "correct" here against the real pit, just change
+// this list first if the seat arrangement ever needs to change, then move
+// the physical QR stickers to match.
 const PIT_LAYOUT = {
   left:  [1, 2, 3, 4, 5],
   front: [6, 7, 8, 9, 10, 11],

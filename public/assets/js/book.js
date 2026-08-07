@@ -75,7 +75,10 @@ function updateTotal() {
 
 function checkWithinHours(bookingDate, slotTime) {
   if (!hours) return null; // config hasn't loaded yet, let the server catch it
-  const day = new Date(`${bookingDate}T00:00:00`).getDay();
+  // Parsed as UTC midnight rather than the browser's local timezone, same as
+  // the server-side check, so a customer browsing from outside the UK still
+  // gets the correct day of the week for the date they picked.
+  const day = new Date(`${bookingDate}T00:00:00Z`).getUTCDay();
   const dayHours = hours[day];
   if (!dayHours) return "We're closed that day. Open Wednesday to Sunday.";
   if (slotTime < dayHours.open || slotTime >= dayHours.close) {

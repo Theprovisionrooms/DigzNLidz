@@ -105,7 +105,8 @@ async function login() {
   });
 
   if (!res.ok) {
-    errorEl.textContent = "Wrong password, try again.";
+    const err = await res.json().catch(() => ({}));
+    errorEl.textContent = err.error || "Wrong password, try again.";
     return;
   }
 

@@ -35,12 +35,22 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
-  await env.DB.prepare(
-    `INSERT INTO discount_codes (code, campaign_id, discount_type, discount_value, expiry, usage_limit)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  )
-    .bind(code.toUpperCase(), campaignId, discountType, discountValue, expiry || null, usageLimit || null)
-    .run();
+  try {
+    await env.DB.prepare(
+      `INSERT INTO discount_codes (code, campaign_id, discount_type, discount_value, expiry, usage_limit)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+      .bind(code.toUpperCase(), campaignId, discountType, discountValue, expiry || null, usageLimit || null)
+      .run();
+  } catch (err) {
+    // D1 throws on the UNIQUE constraint (code is the primary key) if this
+    // code already exists. Give staff a plain answer instead of a raw
+    // database error.
+    if (String(err.message || err).toLowerCase().includes("unique")) {
+      return Response.json({ error: `Code "${code.toUpperCase()}" already exists. Pick a different code.` }, { status: 409 });
+    }
+    throw err;
+  }
 
   return Response.json({ status: "created", code: code.toUpperCase() });
 }
