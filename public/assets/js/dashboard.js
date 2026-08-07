@@ -74,8 +74,7 @@ async function login() {
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    errorEl.textContent = err.error || "Incorrect password.";
+    errorEl.textContent = "Incorrect password.";
     return;
   }
 
@@ -203,7 +202,7 @@ async function loadDiscountCodes() {
       ${data.codes.map((c) => `
         <tr>
           <td>${c.code}</td>
-          <td>${c.discount_type === "percent" ? c.discount_value + "%" : pence(c.discount_value)}</td>
+          <td>${c.discount_type === "percent" ? c.discount_value + "% off" : pence(c.discount_value) + " off"}</td>
           <td>${c.campaign_name || "-"}</td>
           <td>${c.uses}${c.usage_limit ? " / " + c.usage_limit : ""}</td>
         </tr>
@@ -383,19 +382,18 @@ async function redeemSeat(bookingId, tier) {
   loadDashboard();
 }
 
-// Physical layout of the RC pit: |__| - 5 seats down the left leg, 6
-// across the front, 5 up the right leg, open at the top (the door side).
-// Seat positions here are used purely to draw the dashboard's pit map in
-// a sensible left/front/right shape. This ordering is authoritative, not
-// a guess at the physical layout: QR code stickers get placed on the
-// actual seats to match whatever this map says, not the other way round.
-// So there's nothing to "correct" here against the real pit, just change
-// this list first if the seat arrangement ever needs to change, then move
-// the physical QR stickers to match.
+// Physical layout of the RC pit: |__| — 5 seats down the left leg, 6
+// across the front, 5 up the right leg, open at the top. This ordering
+// (left top-to-bottom, front left-to-right, right top-to-bottom) is a
+// first-cut placeholder, reorder the numbers below to match the real
+// seat numbers painted on the pit.
 const PIT_LAYOUT = {
   left:  [1, 2, 3, 4, 5],
   front: [6, 7, 8, 9, 10, 11],
-  right: [12, 13, 14, 15, 16],
+  // Bottom-to-top up the right leg, so the seat drawn next to 11 (the
+  // last front seat) is 12, matching the real numbering painted on the
+  // pit, not 16.
+  right: [16, 15, 14, 13, 12],
 };
 
 function seatStatusClass(status) {

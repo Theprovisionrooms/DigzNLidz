@@ -1,13 +1,29 @@
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 let hours = null;
 let tiers = null;
-const tierCounts = { tier_1: 0, tier_2: 0, tier_3: 0 };
+let bookingOpensDate = null;
+// tier_1 (15 minutes, £5) is a walk-in-only option, no point pre-booking
+// online for something that short, so it's deliberately left out of this
+// form. Still fully available in person. See functions/api/bookings/index.js
+// for the matching server-side block.
+const tierCounts = { tier_2: 0, tier_3: 0 };
+// Every slot on the picker starts on this grid, matches how sessions are
+// actually scheduled at the seats.
+const SLOT_GRANULARITY_MINUTES = 30;
+
+const dateInput = document.getElementById("bookingDate");
+const slotSelect = document.getElementById("slotTime");
+const opensNotice = document.getElementById("opens-notice");
 
 // Date picker shouldn't offer a date that's already gone, and the London
 // calendar date is what matters here, not whatever date the browser or
 // device thinks "today" is if either's clock is off or set to another
 // timezone.
-document.getElementById("bookingDate").min = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+const todayLondon = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+dateInput.min = todayLondon;
+dateInput.addEventListener("change", () => {
+  populateTimeSlots();
+});
 
 async function loadConfig() {
   try {
@@ -15,6 +31,7 @@ async function loadConfig() {
     const data = await res.json();
     hours = data.hours;
     tiers = data.tiers;
+    bookingOpensDate = data.bookingOpensDate || null;
 
     const openDays = Object.keys(hours)
       .sort((a, b) => a - b)
@@ -25,7 +42,18 @@ async function loadConfig() {
     hint.textContent = `Open: ${openDays}. Closed Monday and Tuesday.`;
     document.querySelector(".wrap p").after(hint);
 
+    // Don't let the date picker offer a date before the shop's actually
+    // taking bookings for, and tell people why so it's not a mystery.
+    if (bookingOpensDate && bookingOpensDate > todayLondon) {
+      dateInput.min = bookingOpensDate;
+      const opensReadable = new Date(`${bookingOpensDate}T00:00:00`).toLocaleDateString("en-GB", {
+        day: "numeric", month: "long", year: "numeric",
+      });
+      opensNotice.textContent = `We're opening for bookings from ${opensReadable}, that's the earliest date you can pick.`;
+    }
+
     renderTierPickers();
+    populateTimeSlots();
   } catch (e) {
     document.getElementById("tier-pickers").innerHTML =
       `<p class="error">Couldn't load pricing, refresh the page before booking.</p>`;
@@ -56,10 +84,87 @@ function renderTierPickers() {
       tierCounts[key] = Math.max(0, tierCounts[key] + dir);
       document.getElementById(`qty-${key}`).textContent = tierCounts[key];
       updateTotal();
+      // Session length picked affects how late a slot can start and still
+      // finish before close, so the time options need to shift with it.
+      populateTimeSlots();
     });
   });
 
   updateTotal();
+}
+
+// Longest session length currently picked, in minutes. Drives how late a
+// time slot can start and still finish before closing. Defaults to the
+// shortest bookable tier (30 min) before anyone's picked a length yet, so
+// the picker isn't empty while people are still filling the form in.
+function selectedDurationMinutes() {
+  const picked = Object.keys(tierCounts)
+    .filter((key) => tierCounts[key] > 0)
+    .map((key) => tiers[key].minutes);
+  if (picked.length === 0) {
+    return tiers?.tier_2?.minutes || 30;
+  }
+  return Math.max(...picked);
+}
+
+// Builds the list of bookable start times for whatever date's picked,
+// on the 30-minute grid, stopping early enough that the longest session
+// currently selected still finishes before closing time. Keeps someone
+// from ever landing on a time that's outside opening hours, on a closed
+// day, or that would run past close, so the only options ever shown are
+// ones that actually work.
+function slotsForDate(dateStr) {
+  if (!hours || !dateStr) return [];
+  const day = new Date(`${dateStr}T00:00:00`).getDay();
+  const dayHours = hours[day];
+  if (!dayHours) return [];
+
+  const [openH, openM] = dayHours.open.split(":").map(Number);
+  const [closeH, closeM] = dayHours.close.split(":").map(Number);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+  const duration = selectedDurationMinutes();
+
+  const nowTimeLondon = dateStr === todayLondon
+    ? new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date())
+    : null;
+
+  const slots = [];
+  for (let t = openMinutes; t + duration <= closeMinutes; t += SLOT_GRANULARITY_MINUTES) {
+    const label = `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+    if (nowTimeLondon && label <= nowTimeLondon) continue; // today, already passed
+    slots.push(label);
+  }
+  return slots;
+}
+
+function populateTimeSlots() {
+  const dateStr = dateInput.value;
+
+  if (!dateStr) {
+    slotSelect.innerHTML = `<option value="">Pick a date first</option>`;
+    slotSelect.disabled = true;
+    return;
+  }
+
+  if (bookingOpensDate && dateStr < bookingOpensDate) {
+    slotSelect.innerHTML = `<option value="">Not open for bookings yet</option>`;
+    slotSelect.disabled = true;
+    return;
+  }
+
+  const slots = slotsForDate(dateStr);
+  if (slots.length === 0) {
+    const day = new Date(`${dateStr}T00:00:00`).getDay();
+    const closed = hours && !hours[day];
+    slotSelect.innerHTML = `<option value="">${closed ? "Closed that day, pick Wed\u2013Sun" : "No slots left that day"}</option>`;
+    slotSelect.disabled = true;
+    return;
+  }
+
+  slotSelect.innerHTML = `<option value="">Select a time</option>` +
+    slots.map((s) => `<option value="${s}">${s}</option>`).join("");
+  slotSelect.disabled = false;
 }
 
 function updateTotal() {
@@ -75,10 +180,7 @@ function updateTotal() {
 
 function checkWithinHours(bookingDate, slotTime) {
   if (!hours) return null; // config hasn't loaded yet, let the server catch it
-  // Parsed as UTC midnight rather than the browser's local timezone, same as
-  // the server-side check, so a customer browsing from outside the UK still
-  // gets the correct day of the week for the date they picked.
-  const day = new Date(`${bookingDate}T00:00:00Z`).getUTCDay();
+  const day = new Date(`${bookingDate}T00:00:00`).getDay();
   const dayHours = hours[day];
   if (!dayHours) return "We're closed that day. Open Wednesday to Sunday.";
   if (slotTime < dayHours.open || slotTime >= dayHours.close) {
@@ -94,6 +196,16 @@ document.getElementById("booking-form").addEventListener("submit", async (e) => 
 
   if (Object.values(tierCounts).every((n) => n === 0)) {
     errorEl.textContent = "Pick at least one person and a session length.";
+    return;
+  }
+
+  if (!document.getElementById("bookingDate").value || !document.getElementById("slotTime").value) {
+    errorEl.textContent = "Pick a date and a time slot.";
+    return;
+  }
+
+  if (bookingOpensDate && document.getElementById("bookingDate").value < bookingOpensDate) {
+    errorEl.textContent = `We're not taking bookings for that date yet, online booking opens from ${bookingOpensDate}.`;
     return;
   }
 

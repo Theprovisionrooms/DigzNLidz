@@ -21,6 +21,7 @@ export async function onRequestGet({ env }) {
     "tier_2_name", "tier_2_minutes", "tier_2_price_pence",
     "tier_3_name", "tier_3_minutes", "tier_3_price_pence",
     "extension_minutes", "extension_price_pence",
+    "booking_opens_date",
   ]);
 
   // Same source seats/[id]/order.js and tables/[id]/order.js re-price
@@ -56,6 +57,11 @@ export async function onRequestGet({ env }) {
     },
     menu,
     hours: BUSINESS_HOURS,
+    // First date online bookings are actually allowed for, "YYYY-MM-DD".
+    // Confirmed by Jordan. Dates before this are still visible on the
+    // date picker so people can see when to come back, but can't be
+    // selected or paid for, see book.js and bookings/index.js.
+    bookingOpensDate: settings.booking_opens_date || null,
   }, {
     headers: { "Cache-Control": "public, max-age=60" },
   });

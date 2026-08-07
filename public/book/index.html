@@ -52,9 +52,12 @@
 
         <span class="field-label">Date</span>
         <input id="bookingDate" type="date" required class="field">
+        <div id="opens-notice" style="font-size:12px;color:var(--yellow);margin-top:4px;"></div>
 
         <span class="field-label">Time slot</span>
-        <input id="slotTime" type="time" required class="field">
+        <select id="slotTime" required class="field" disabled>
+          <option value="">Pick a date first</option>
+        </select>
 
         <span class="field-label">Notes</span>
         <textarea id="notes" class="field"></textarea>

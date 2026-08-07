@@ -93,8 +93,29 @@
   </header>
 
   <div class="hours-strip">
-    <strong>Open:</strong> Wed &amp; Thu 11am&ndash;6pm &middot; Fri &amp; Sat 11am&ndash;8pm &middot; Sun 11am&ndash;6pm &middot; <strong>Closed Mon &amp; Tue</strong>
+    <div class="hours-strip-row">
+      <span class="hours-strip-item"><strong>Wed &amp; Thu</strong> 11am&ndash;6pm</span>
+      <span class="hours-strip-item"><strong>Fri &amp; Sat</strong> 11am&ndash;8pm</span>
+      <span class="hours-strip-item"><strong>Sun</strong> 11am&ndash;6pm</span>
+      <span class="hours-strip-item hours-strip-closed">Closed Mon &amp; Tue</span>
+    </div>
+    <div class="hours-strip-note" id="booking-opens-note"></div>
   </div>
+  <script>
+    // Only shows while the go-live date is still in the future, and
+    // removes itself once bookings are actually open, so this never
+    // needs manually taking down.
+    (function () {
+      fetch("/api/config").then(function (r) { return r.json(); }).then(function (data) {
+        var opens = data.bookingOpensDate;
+        if (!opens) return;
+        var todayLondon = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+        if (opens <= todayLondon) return;
+        var readable = new Date(opens + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+        document.getElementById("booking-opens-note").textContent = "Online bookings open from " + readable + ", browse away, just can't pick a date before then yet.";
+      }).catch(function () {});
+    })();
+  </script>
 
   <section class="home-wrap hero">
     <div class="hero-copy">

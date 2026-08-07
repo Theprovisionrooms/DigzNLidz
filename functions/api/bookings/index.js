@@ -13,6 +13,10 @@ import { BUSINESS_HOURS } from "../config.js";
 import { getSettings } from "../../lib/settings.js";
 
 const TIER_KEYS = ["tier_1", "tier_2", "tier_3"];
+// tier_1 (the 15 minute slot) is walk-in only, there's no point pre-booking
+// online for something that short, see the tier_1 check below. Still fully
+// valid at the seat itself (see lib/settings.js getTierConfig / dashboard
+// claim-seat), this only blocks it from the online booking form/endpoint.
 const TOTAL_SEATS = 16;
 // An unpaid booking that never completes checkout shouldn't hold capacity
 // hostage forever, but someone genuinely mid-checkout right now needs
@@ -45,6 +49,22 @@ function checkNotPast(bookingDate, slotTime) {
   }).format(now);
   if (bookingDate < todayLondon || (bookingDate === todayLondon && slotTime <= nowTimeLondon)) {
     return { ok: false, error: "That date or time has already passed, pick an upcoming slot." };
+  }
+  return { ok: true };
+}
+
+// The shop isn't taking bookings for any date before it's actually open,
+// even though the form itself is live ahead of that so people can browse
+// pricing and see when to come back. Client side (book.js) also blocks
+// this on the date picker, but that's just UX, this is what actually
+// stops a direct hit on this endpoint paying for a date before go-live.
+function checkBookingOpen(bookingDate, opensDate) {
+  if (!opensDate) return { ok: true }; // no go-live date set, don't block anything
+  if (bookingDate < opensDate) {
+    return {
+      ok: false,
+      error: `We're not taking bookings for that date yet, online booking opens from ${opensDate}.`,
+    };
   }
   return { ok: true };
 }
@@ -120,6 +140,12 @@ export async function onRequestPost({ request, env }) {
   if (!tierCounts || TIER_KEYS.every((k) => !tierCounts[k])) {
     return Response.json({ error: "pick at least one person for a tier" }, { status: 400 });
   }
+  if (Number(tierCounts.tier_1) > 0) {
+    return Response.json(
+      { error: "15 minute sessions aren't available to pre-book online, that's a walk-in only option on the day. Choose 30 or 60 minutes instead." },
+      { status: 400 }
+    );
+  }
 
   const hoursCheck = checkWithinHours(bookingDate, slotTime);
   if (!hoursCheck.ok) {
@@ -137,7 +163,13 @@ export async function onRequestPost({ request, env }) {
   const settings = await getSettings(env.DB, [
     "tier_1_price_pence", "tier_2_price_pence", "tier_3_price_pence",
     "tier_1_minutes", "tier_2_minutes", "tier_3_minutes",
+    "booking_opens_date",
   ]);
+
+  const openCheck = checkBookingOpen(bookingDate, settings.booking_opens_date);
+  if (!openCheck.ok) {
+    return Response.json({ error: openCheck.error }, { status: 400 });
+  }
 
   let baseTotal = 0;
   const cleanCounts = {};

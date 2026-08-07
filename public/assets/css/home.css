@@ -121,20 +121,58 @@ body.home h3 {
 .nav-toggle.is-open span:nth-child(2) { opacity: 0; }
 .nav-toggle.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
+/* Sits in normal flow above the drifting digger PNGs (position: fixed,
+   z-index: 0, see base.css), so it needs its own stacking context and a
+   higher z-index or those can paint over it near the top of the page. */
 .hours-strip {
+  position: relative;
+  z-index: 1;
   background: var(--yellow);
   color: var(--site-black);
   text-align: center;
   font-family: "Barlow", sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 16px;
+  padding: 10px 16px;
   margin-top: 14px;
   letter-spacing: 0.01em;
 }
 
+.hours-strip-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hours-strip-item strong {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.hours-strip-closed {
+  background: var(--site-black);
+  color: var(--yellow);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hours-strip-note {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+.hours-strip-note:empty { display: none; }
+
 @media (max-width: 600px) {
-  .hours-strip { font-size: 12px; padding: 8px 10px; }
+  .hours-strip { padding: 10px 12px; }
+  .hours-strip-row { gap: 6px 12px; font-size: 13px; }
+  .hours-strip-item { flex: 1 1 auto; }
 }
 
 @media (max-width: 640px) {
