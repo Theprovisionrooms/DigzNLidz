@@ -48,8 +48,12 @@ function basketTotalPence() {
 
 function render() {
   const rows = config.menu.map((item) => `
-    <div class="item-row">
-      <div>${item.name} · £${(item.pricePence / 100).toFixed(2)}</div>
+    <div class="menu-item-card">
+      ${item.imageUrl
+        ? `<img src="${item.imageUrl}" alt="${item.name}" loading="lazy">`
+        : `<div class="menu-item-noimage"></div>`}
+      <strong>${item.name}</strong>
+      <span class="menu-item-price">£${(item.pricePence / 100).toFixed(2)}</span>
       <div class="qty-controls">
         <button data-item="${item.id}" data-dir="-1">-</button>
         <span id="qty-${item.id}">${cart[item.id] || 0}</span>
@@ -61,7 +65,7 @@ function render() {
   app.innerHTML = `
     <div class="card">
       <h2>Order to your table</h2>
-      ${rows}
+      <div class="menu-grid">${rows}</div>
       <div class="basket-total"><span>Total</span><span id="basket-total-amount">£${(basketTotalPence() / 100).toFixed(2)}</span></div>
       <button id="order-submit">Order</button>
       <div id="card-container"></div>

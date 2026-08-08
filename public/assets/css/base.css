@@ -173,6 +173,58 @@ button.secondary {
   object-fit: contain;
 }
 
+/* Food & drink ordering (/seat), same card language as the vehicle
+   picker above so the whole visit feels like one consistent app rather
+   than two different UIs bolted together. Square catalog images are
+   real photos rather than transparent-cutout PNGs, background stays as
+   the card colour instead of "floating" like the vehicle art does. */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.menu-item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  background: var(--site-black);
+  border: 1px solid #3a3530;
+  border-radius: 4px;
+  padding: 10px 8px;
+}
+
+.menu-item-card img {
+  width: 100%;
+  max-width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.menu-item-noimage {
+  width: 100%;
+  max-width: 96px;
+  height: 72px;
+  border-radius: 3px;
+  background: #2a2622;
+}
+
+.menu-item-card strong {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.menu-item-price {
+  font-size: 12px;
+  color: var(--yellow);
+}
+
 .error {
   color: #e0664a;
   margin-top: 8px;

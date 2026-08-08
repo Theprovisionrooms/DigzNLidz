@@ -70,21 +70,31 @@ async function squareFetch(env, path, options = {}) {
 }
 
 // Menu items, pulled from Square's catalog so Mark and Danny can manage
-// pricing and items themselves in Square without needing a code change.
-// Only ITEM type, one price per item (their snack menu isn't the kind of
-// thing that needs variations like size or colour).
+// pricing, items, AND photos themselves in Square without needing a code
+// change or redeploy, same as pricing already works. types=ITEM,IMAGE in
+// one call rather than two separate requests, IMAGE objects come back in
+// the same list, matched to items below via item_data.image_ids.
 export async function listMenuItems(env) {
-  const data = await squareFetch(env, "/v2/catalog/list?types=ITEM", { method: "GET" });
+  const data = await squareFetch(env, "/v2/catalog/list?types=ITEM,IMAGE", { method: "GET" });
   const objects = data.objects || [];
 
+  const imageUrlById = Object.fromEntries(
+    objects
+      .filter((obj) => obj.type === "IMAGE" && obj.image_data?.url)
+      .map((obj) => [obj.id, obj.image_data.url])
+  );
+
   return objects
+    .filter((obj) => obj.type === "ITEM")
     .map((obj) => {
       const variation = obj.item_data?.variations?.[0]?.item_variation_data;
       if (!variation?.price_money?.amount) return null;
+      const imageId = obj.item_data?.image_ids?.[0];
       return {
         id: obj.id,
         name: obj.item_data.name,
         pricePence: variation.price_money.amount,
+        imageUrl: imageId ? imageUrlById[imageId] || null : null,
       };
     })
     .filter(Boolean);
@@ -92,7 +102,10 @@ export async function listMenuItems(env) {
 
 // Same fallback menu used by /api/config, kept here too so order endpoints
 // can price-check against it without importing from functions/api (Pages
-// Functions routes aren't meant to be imported from each other).
+// Functions routes aren't meant to be imported from each other). No
+// imageUrl, deliberately: this only ever shows up if the Square catalog
+// fetch itself failed (see getMenu below), so the picker just renders
+// these without a photo rather than pointing at a made-up path.
 const FALLBACK_MENU = [
   { id: "squash", name: "Squash", pricePence: 150 },
   { id: "crisps", name: "Crisps", pricePence: 150 },
