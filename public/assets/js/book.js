@@ -131,7 +131,7 @@ function renderVehiclePickers() {
 
   container.innerHTML = rows + (trailerModelsExist ? `
     <div class="item-row vehicle-item-row">
-      <div class="vehicle-info"><div>Trailer for a Scania truck<br><small>Optional, ${trailersTotal} in total</small></div></div>
+      <div class="vehicle-info"><img src="/assets/img/vehicles/trailer.png" alt="Trailer" loading="lazy"><div>Trailer for a Scania truck<br><small>Optional, ${trailersTotal} in total</small></div></div>
       <div class="qty-controls">
         <button type="button" id="trailer-minus">-</button>
         <span id="vqty-trailer">0</span>

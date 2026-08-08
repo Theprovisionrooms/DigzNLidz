@@ -228,7 +228,8 @@ async function renderVehiclePicker(tierKey) {
     <div class="card">
       <h2>Pick your vehicle</h2>
       <div class="vehicle-grid">${cards}</div>
-      <div id="trailer-toggle-wrap" style="display:none;">
+      <div id="trailer-toggle-wrap" class="vehicle-item-row" style="display:none;">
+        <img src="/assets/img/vehicles/trailer.png" alt="Trailer" loading="lazy">
         <label><input type="checkbox" id="trailer-toggle"> Add a trailer (${data.trailersAvailable} of ${data.trailersTotal} free right now)</label>
       </div>
       <button id="vehicle-confirm-btn" disabled>Start</button>

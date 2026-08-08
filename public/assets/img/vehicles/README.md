@@ -10,6 +10,7 @@ there too if you'd rather use different filenames):
 - scania-770s-red.png
 - scania-770s-green.png
 - tower-crane.png
+- trailer.png
 
 Used at ~96x72px on the seat/booking picker cards (see .vehicle-option img
 in base.css), so anything reasonably square-ish and at least ~400px wide
