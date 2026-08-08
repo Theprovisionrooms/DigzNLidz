@@ -8,12 +8,11 @@ let bookingOpensDate = null;
 // for the matching server-side block.
 const tierCounts = { tier_2: 0, tier_3: 0 };
 // Which model each person in the party wants, keyed by vehicle_models.slug
-// (see migration 0018), plus how many of the picked Scania trucks want a
-// trailer. Populated from /api/vehicles once it loads.
+// (see migration 0018), plus whether they want a trailer with it. Populated
+// from /api/vehicles once it loads. Actual per-guest picks live in
+// personVehicles / personTrailers below.
 let vehicleModels = null;
 let trailersTotal = 0;
-const vehicleBreakdown = {};
-let trailerCount = 0;
 // Every slot on the picker starts on this grid, matches how sessions are
 // actually scheduled at the seats.
 const SLOT_GRANULARITY_MINUTES = 30;
@@ -98,91 +97,115 @@ function partySize() {
   return Object.values(tierCounts).reduce((a, b) => a + b, 0);
 }
 
-function vehicleAssignedCount() {
-  return Object.values(vehicleBreakdown).reduce((a, b) => a + b, 0);
+// One entry per guest in the party, index-matched: personVehicles[2] is
+// guest 3's chosen model slug (or null, not picked yet), personTrailers[2]
+// is whether they want a trailer with it. Resized whenever partySize()
+// changes (see renderTierPickers' qty listener), keeping earlier picks
+// where the index still exists.
+let personVehicles = [];
+let personTrailers = [];
+
+function syncPersonArraysToPartySize() {
+  const n = partySize();
+  while (personVehicles.length < n) personVehicles.push(null);
+  while (personTrailers.length < n) personTrailers.push(false);
+  personVehicles.length = n;
+  personTrailers.length = n;
 }
 
-function scaniaPickCount() {
-  return (vehicleBreakdown["scania-770s-red"] || 0) + (vehicleBreakdown["scania-770s-green"] || 0);
+function vehicleAssignedCount() {
+  return personVehicles.filter(Boolean).length;
+}
+
+function vehicleBreakdownFromSelections() {
+  const breakdown = {};
+  for (const slug of personVehicles) {
+    if (!slug) continue;
+    breakdown[slug] = (breakdown[slug] || 0) + 1;
+  }
+  return breakdown;
+}
+
+function trailerCountFromSelections() {
+  return personTrailers.filter(Boolean).length;
+}
+
+// How many units of a model are still free to pick, physically: total
+// units minus how many other guests in this same form have already taken
+// one. This is a party-internal cap, not a live stock check, someone
+// else's booking or a walk-in could still take the actual last unit
+// between now and when this form's submitted, that's re-checked
+// server-side (see /api/bookings).
+function remainingForModel(slug, excludingPersonIndex) {
+  const model = vehicleModels.find((m) => m.slug === slug);
+  if (!model) return 0;
+  const takenByOthers = personVehicles.filter((s, i) => s === slug && i !== excludingPersonIndex).length;
+  return model.total_units - takenByOthers;
+}
+
+function remainingTrailers(excludingPersonIndex) {
+  const takenByOthers = personTrailers.filter((t, i) => t && i !== excludingPersonIndex).length;
+  return trailersTotal - takenByOthers;
 }
 
 function renderVehiclePickers() {
   const container = document.getElementById("vehicle-pickers");
   if (!vehicleModels) return;
+  syncPersonArraysToPartySize();
 
-  const rows = vehicleModels.map((m) => `
-    <div class="item-row vehicle-item-row">
-      <div class="vehicle-info">
-        <img src="${m.image_path}" alt="${m.name}" loading="lazy">
-        <div>
-          ${m.name}<br>
-          <small>${m.description || ""}</small>
-        </div>
+  if (personVehicles.length === 0) {
+    container.innerHTML = `<p style="font-size:12px;color:var(--bone);opacity:0.7;">Pick how many people first.</p>`;
+    updateVehicleTotal();
+    return;
+  }
+
+  container.innerHTML = personVehicles.map((selectedSlug, i) => `
+    <div class="person-vehicle-block">
+      <span class="field-label">Guest ${i + 1}'s vehicle</span>
+      <div class="vehicle-grid" data-person="${i}">
+        ${vehicleModels.map((m) => {
+          const remaining = remainingForModel(m.slug, i);
+          const isSelected = selectedSlug === m.slug;
+          const disabled = remaining <= 0 && !isSelected;
+          return `
+            <button type="button" class="vehicle-option${isSelected ? " selected" : ""}${disabled ? " disabled" : ""}"
+              data-person="${i}" data-slug="${m.slug}" ${disabled ? "disabled" : ""}>
+              <img src="${m.image_path}" alt="${m.name}" loading="lazy">
+              <strong>${m.name}</strong>
+              ${m.description ? `<small>${m.description}</small>` : ""}
+              <span class="vehicle-availability">${remaining > 0 ? `${remaining} left for the party` : "None left for the party"}</span>
+            </button>
+          `;
+        }).join("")}
       </div>
-      <div class="qty-controls">
-        <button type="button" data-slug="${m.slug}" data-dir="-1">-</button>
-        <span id="vqty-${m.slug}">0</span>
-        <button type="button" data-slug="${m.slug}" data-dir="1">+</button>
-      </div>
+      ${selectedSlug && vehicleModels.find((m) => m.slug === selectedSlug)?.has_trailer_option ? `
+        <label class="trailer-check">
+          <input type="checkbox" data-person="${i}" class="trailer-check-input" ${personTrailers[i] ? "checked" : ""}
+            ${!personTrailers[i] && remainingTrailers(i) <= 0 ? "disabled" : ""}>
+          <img src="/assets/img/vehicles/trailer.png" alt="Trailer">
+          Add a trailer (${remainingTrailers(i)} of ${trailersTotal} left for the party)
+        </label>
+      ` : ""}
     </div>
   `).join("");
 
-  const trailerModelsExist = vehicleModels.some((m) => m.has_trailer_option);
-
-  container.innerHTML = rows + (trailerModelsExist ? `
-    <div class="item-row vehicle-item-row">
-      <div class="vehicle-info"><img src="/assets/img/vehicles/trailer.png" alt="Trailer" loading="lazy"><div>Trailer for a Scania truck<br><small>Optional, ${trailersTotal} in total</small></div></div>
-      <div class="qty-controls">
-        <button type="button" id="trailer-minus">-</button>
-        <span id="vqty-trailer">0</span>
-        <button type="button" id="trailer-plus">+</button>
-      </div>
-    </div>
-  ` : "");
-
-  container.querySelectorAll("button[data-slug]").forEach((btn) => {
+  container.querySelectorAll(".vehicle-option").forEach((btn) => {
     btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.person);
       const slug = btn.dataset.slug;
-      const dir = Number(btn.dataset.dir);
-      const model = vehicleModels.find((m) => m.slug === slug);
-      const current = vehicleBreakdown[slug] || 0;
-      const next = Math.max(0, current + dir);
-      // Client-side cap is the model's total physical units, a coarse
-      // guardrail so the form doesn't visibly let someone pick 6 Wheel
-      // Loaders when only 2 exist. The real, slot-specific capacity
-      // check happens server-side (see /api/bookings).
-      if (dir > 0 && next > model.total_units) return;
-      vehicleBreakdown[slug] = next;
-      if (next === 0) delete vehicleBreakdown[slug];
-      document.getElementById(`vqty-${slug}`).textContent = next;
-      if (!model.has_trailer_option) return;
-      // Fewer Scania picks than trailers already requested: trim the
-      // trailer count down so it can never outnumber the trucks it'd
-      // attach to.
-      if (scaniaPickCount() < trailerCount) {
-        trailerCount = scaniaPickCount();
-        document.getElementById("vqty-trailer").textContent = trailerCount;
-      }
-      updateVehicleTotal();
+      personVehicles[i] = personVehicles[i] === slug ? null : slug;
+      if (personVehicles[i] !== slug) personTrailers[i] = false; // deselected or switched model, drop any trailer pick
+      renderVehiclePickers();
     });
   });
 
-  const trailerMinus = document.getElementById("trailer-minus");
-  const trailerPlus = document.getElementById("trailer-plus");
-  if (trailerMinus && trailerPlus) {
-    trailerMinus.addEventListener("click", () => {
-      trailerCount = Math.max(0, trailerCount - 1);
-      document.getElementById("vqty-trailer").textContent = trailerCount;
-      updateVehicleTotal();
+  container.querySelectorAll(".trailer-check-input").forEach((box) => {
+    box.addEventListener("change", () => {
+      const i = Number(box.dataset.person);
+      personTrailers[i] = box.checked;
+      renderVehiclePickers();
     });
-    trailerPlus.addEventListener("click", () => {
-      const next = trailerCount + 1;
-      if (next > trailersTotal || next > scaniaPickCount()) return;
-      trailerCount = next;
-      document.getElementById("vqty-trailer").textContent = trailerCount;
-      updateVehicleTotal();
-    });
-  }
+  });
 
   updateVehicleTotal();
 }
@@ -221,9 +244,9 @@ function renderTierPickers() {
       // Session length picked affects how late a slot can start and still
       // finish before close, so the time options need to shift with it.
       populateTimeSlots();
-      // Party size just changed, so how many vehicles still need picking
-      // has too.
-      updateVehicleTotal();
+      // Party size just changed, so the per-guest vehicle pickers need to
+      // grow/shrink (and re-render, since remaining-stock counts shift too).
+      renderVehiclePickers();
     });
   });
 
@@ -366,8 +389,8 @@ document.getElementById("booking-form").addEventListener("submit", async (e) => 
     email: document.getElementById("email").value,
     phone: document.getElementById("phone").value,
     tierCounts,
-    vehicleBreakdown,
-    trailerCount,
+    vehicleBreakdown: vehicleBreakdownFromSelections(),
+    trailerCount: trailerCountFromSelections(),
     bookingDate: document.getElementById("bookingDate").value,
     slotTime: document.getElementById("slotTime").value,
     notes: document.getElementById("notes").value,

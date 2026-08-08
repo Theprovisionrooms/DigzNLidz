@@ -153,6 +153,26 @@ button.secondary {
   cursor: not-allowed;
 }
 
+/* Booking form only: one vehicle-grid per guest, stacked. */
+.person-vehicle-block {
+  margin-bottom: 16px;
+}
+
+.trailer-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 8px;
+  color: var(--bone);
+}
+
+.trailer-check img {
+  width: 32px;
+  height: 26px;
+  object-fit: contain;
+}
+
 .error {
   color: #e0664a;
   margin-top: 8px;
