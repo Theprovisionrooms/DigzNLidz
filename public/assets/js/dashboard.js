@@ -366,19 +366,45 @@ function renderHoldPanel(bookings) {
   }).join("");
 }
 
+// Cached on first use rather than fetched fresh every redeem, the
+// catalog itself (names/slugs) doesn't change mid-shift even though
+// availability does, and staff redeem the same booking's several people
+// back to back, no reason to re-fetch for each one.
+let vehicleCatalogCache = null;
+async function getVehicleCatalogCached() {
+  if (!vehicleCatalogCache) {
+    const res = await fetch("/api/vehicles");
+    const data = await res.json();
+    vehicleCatalogCache = data.models;
+  }
+  return vehicleCatalogCache;
+}
+
 async function redeemSeat(bookingId, tier) {
   const seatId = prompt(`Which seat number for this ${TIER_LABELS[tier]} slot?`);
   if (!seatId) return;
+
+  const models = await getVehicleCatalogCached();
+  const optionsList = models.map((m) => `${m.slug} - ${m.name} (${m.available} free)`).join("\n");
+  const vehicleSlug = prompt(`Which vehicle for this person? Type the slug exactly, or leave blank to skip.\n\n${optionsList}`);
+
+  let trailer = false;
+  const chosenModel = models.find((m) => m.slug === vehicleSlug);
+  if (chosenModel?.has_trailer_option) {
+    trailer = confirm(`Add a trailer to the ${chosenModel.name}?`);
+  }
+
   const res = await fetch(`/api/bookings/${bookingId}/redeem-seat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ seatId: Number(seatId), tier }),
+    body: JSON.stringify({ seatId: Number(seatId), tier, vehicleSlug: vehicleSlug || null, trailer }),
   });
   if (!res.ok) {
     const err = await res.json();
     alert(err.error || "Something went wrong");
     return;
   }
+  vehicleCatalogCache = null; // availability's just changed, don't show a stale "free" count next redeem
   loadDashboard();
 }
 

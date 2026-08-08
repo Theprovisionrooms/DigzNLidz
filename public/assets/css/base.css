@@ -89,6 +89,70 @@ button.secondary {
 
 .tier-option:last-child { border-bottom: none; }
 
+/* Tap-to-select RC vehicle picker, used on /seat (walk-in) and /book
+   (pre-booking). Image is a transparent-background PNG so it sits on
+   the card background with no box behind it. */
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.vehicle-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  background: var(--site-black);
+  color: var(--bone);
+  border: 1px solid #3a3530;
+  border-radius: 4px;
+  padding: 10px 8px;
+  margin-top: 0;
+  text-transform: none;
+  font-family: inherit;
+  letter-spacing: normal;
+}
+
+.vehicle-option img {
+  width: 100%;
+  max-width: 96px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.vehicle-option strong {
+  font-family: "Oswald", "Arial Narrow", sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.vehicle-option small {
+  color: #9a9086;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.vehicle-availability {
+  font-size: 11px;
+  color: var(--yellow);
+}
+
+.vehicle-option.disabled .vehicle-availability { color: #9a9086; }
+
+.vehicle-option.selected {
+  border-color: var(--yellow);
+  border-width: 2px;
+}
+
+.vehicle-option:disabled,
+.vehicle-option[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .error {
   color: #e0664a;
   margin-top: 8px;
@@ -159,6 +223,26 @@ button.secondary {
   width: 32px;
   padding: 6px;
   margin: 0;
+}
+
+.vehicle-item-row img {
+  width: 44px;
+  height: 40px;
+  object-fit: contain;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.vehicle-item-row .vehicle-info {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.vehicle-item-row .vehicle-info small {
+  display: block;
+  color: #9a9086;
+  font-size: 11px;
 }
 
 /* Hazard stripe divider, matches the logo's yellow/black diagonal band */

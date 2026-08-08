@@ -11,6 +11,7 @@
 import { createPaymentLink } from "../../lib/square.js";
 import { BUSINESS_HOURS } from "../config.js";
 import { getSettings } from "../../lib/settings.js";
+import { getVehicleCatalog } from "../../lib/capacity.js";
 
 const TIER_KEYS = ["tier_1", "tier_2", "tier_3"];
 // tier_1 (the 15 minute slot) is walk-in only, there's no point pre-booking
@@ -101,6 +102,38 @@ function exceedsCapacity(existingIntervals, newIntervals) {
   return false;
 }
 
+// Same overlap-sweep idea as exceedsCapacity above, but checked against
+// each RC model's own total_units (and the shared trailer pool) instead
+// of one shared seat count. Every online booking's whole visit window
+// (slot start to the end of its longest tier) is used for every model or
+// trailer it picked. tier_1 isn't bookable online (see the check further
+// up), so there's only ever one length per booking's models in practice,
+// this doesn't need to be any more precise than that.
+function exceedsVehicleCapacity(existingVisits, newVisit, models, trailersTotal) {
+  const all = [...existingVisits, newVisit];
+  const boundaries = [...new Set(all.flatMap((v) => [v.start, v.end]))];
+
+  for (const model of models) {
+    for (const t of boundaries) {
+      const unitsAtT = all.reduce((sum, v) => {
+        if (!(v.start <= t && t < v.end)) return sum;
+        return sum + (Number(v.vehicleBreakdown[model.slug]) || 0);
+      }, 0);
+      if (unitsAtT > model.total_units) return `We don't have enough ${model.name} free at that time.`;
+    }
+  }
+
+  for (const t of boundaries) {
+    const trailersAtT = all.reduce(
+      (sum, v) => (v.start <= t && t < v.end ? sum + (Number(v.trailerCount) || 0) : sum),
+      0
+    );
+    if (trailersAtT > trailersTotal) return "We don't have enough trailers free at that time.";
+  }
+
+  return null;
+}
+
 async function applyDiscount(db, code, amountPence) {
   if (!code) return { finalAmountPence: amountPence, discountCode: null };
 
@@ -128,8 +161,10 @@ async function applyDiscount(db, code, amountPence) {
 
 export async function onRequestPost({ request, env }) {
   const body = await request.json();
-  const { type, name, email, phone, tierCounts, bookingDate, slotTime, notes, discountCode } = body;
+  const { type, name, email, phone, tierCounts, bookingDate, slotTime, notes, discountCode, vehicleBreakdown, trailerCount } = body;
   // tierCounts: { tier_1: 2, tier_2: 0, tier_3: 1 }, how many people want each tier
+  // vehicleBreakdown: { "wheel-loader-v2": 2, "scania-770s-red": 1 }, which
+  // model each person in the party wants, keyed by vehicle_models.slug
 
   if (!["single", "couple", "family", "group"].includes(type)) {
     return Response.json({ error: "type must be single, couple, family, or group" }, { status: 400 });
@@ -163,7 +198,7 @@ export async function onRequestPost({ request, env }) {
   const settings = await getSettings(env.DB, [
     "tier_1_price_pence", "tier_2_price_pence", "tier_3_price_pence",
     "tier_1_minutes", "tier_2_minutes", "tier_3_minutes",
-    "booking_opens_date",
+    "booking_opens_date", "trailers_total",
   ]);
 
   const openCheck = checkBookingOpen(bookingDate, settings.booking_opens_date);
@@ -214,6 +249,65 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
+  // Every person in the party picks one RC model, this is an RC
+  // experience booking, not a generic seat booking, so the two counts
+  // have to match exactly rather than allowing a partial pick.
+  const cleanVehicleBreakdown = {};
+  let vehicleTotal = 0;
+  const models = await getVehicleCatalog(env.DB);
+  const modelBySlug = Object.fromEntries(models.map((m) => [m.slug, m]));
+  for (const [slug, count] of Object.entries(vehicleBreakdown || {})) {
+    if (!modelBySlug[slug]) {
+      return Response.json({ error: `Unknown vehicle: ${slug}` }, { status: 400 });
+    }
+    const clean = Math.max(0, Number(count) || 0);
+    if (clean === 0) continue;
+    cleanVehicleBreakdown[slug] = clean;
+    vehicleTotal += clean;
+  }
+  if (vehicleTotal !== partySize) {
+    return Response.json(
+      { error: "Everyone in the party needs a vehicle picked, and the count has to match your party size." },
+      { status: 400 }
+    );
+  }
+  const cleanTrailerCount = Math.max(0, Number(trailerCount) || 0);
+  const scaniaPicks = (cleanVehicleBreakdown["scania-770s-red"] || 0) + (cleanVehicleBreakdown["scania-770s-green"] || 0);
+  if (cleanTrailerCount > scaniaPicks) {
+    return Response.json(
+      { error: "You've asked for more trailers than Scania trucks in this booking." },
+      { status: 400 }
+    );
+  }
+
+  const { results: sameDayVehicleBookings } = await env.DB.prepare(
+    `SELECT slot_time, tier_breakdown_json, vehicle_breakdown_json, trailer_count FROM bookings
+     WHERE booking_date = ?
+       AND (payment_status = 'paid' OR (payment_status = 'unpaid' AND created_at >= datetime('now', ?)))`
+  )
+    .bind(bookingDate, `-${PENDING_HOLD_MINUTES} minutes`)
+    .all();
+
+  const existingVisits = sameDayVehicleBookings.map((b) => {
+    const ivs = bookingIntervals(b.slot_time, JSON.parse(b.tier_breakdown_json || "{}"), settings);
+    const start = ivs.length ? ivs[0].start : 0;
+    const end = ivs.length ? Math.max(...ivs.map((iv) => iv.end)) : start;
+    return {
+      start,
+      end,
+      vehicleBreakdown: JSON.parse(b.vehicle_breakdown_json || "{}"),
+      trailerCount: b.trailer_count || 0,
+    };
+  });
+  const newVisitStart = newIntervals.length ? newIntervals[0].start : 0;
+  const newVisitEnd = newIntervals.length ? Math.max(...newIntervals.map((iv) => iv.end)) : newVisitStart;
+  const newVisit = { start: newVisitStart, end: newVisitEnd, vehicleBreakdown: cleanVehicleBreakdown, trailerCount: cleanTrailerCount };
+
+  const vehicleCapacityError = exceedsVehicleCapacity(existingVisits, newVisit, models, Number(settings.trailers_total) || 0);
+  if (vehicleCapacityError) {
+    return Response.json({ error: vehicleCapacityError }, { status: 409 });
+  }
+
   const { finalAmountPence, discountCode: appliedCode, error: discountError } =
     await applyDiscount(env.DB, discountCode, baseTotal);
 
@@ -222,10 +316,14 @@ export async function onRequestPost({ request, env }) {
   }
 
   const insert = await env.DB.prepare(
-    `INSERT INTO bookings (type, name, email, phone, party_size, booking_date, slot_time, total_amount_pence, tier_breakdown_json, notes, discount_code)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO bookings (type, name, email, phone, party_size, booking_date, slot_time, total_amount_pence, tier_breakdown_json, notes, discount_code, vehicle_breakdown_json, trailer_count)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(type, name, email, phone || null, partySize, bookingDate, slotTime, finalAmountPence, JSON.stringify(cleanCounts), notes || null, appliedCode || null)
+    .bind(
+      type, name, email, phone || null, partySize, bookingDate, slotTime, finalAmountPence,
+      JSON.stringify(cleanCounts), notes || null, appliedCode || null,
+      JSON.stringify(cleanVehicleBreakdown), cleanTrailerCount
+    )
     .run();
 
   const bookingId = insert.meta.last_row_id;

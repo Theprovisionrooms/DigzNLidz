@@ -9,14 +9,35 @@
 
 import { getTierConfig } from "../../../lib/settings.js";
 import { chargeSourceId, createCustomer, saveCardFromPayment } from "../../../lib/square.js";
+import { getVehicleAvailabilityNow } from "../../../lib/capacity.js";
 
 export async function onRequestPost({ params, request, env }) {
   const seatId = params.id;
   const body = await request.json();
-  const { tier, sourceId } = body; // tier: "tier_1" | "tier_2" | "tier_3"
+  const { tier, sourceId, vehicleSlug, trailer } = body; // tier: "tier_1" | "tier_2" | "tier_3"
 
   if (!["tier_1", "tier_2", "tier_3"].includes(tier)) {
     return Response.json({ error: "invalid tier" }, { status: 400 });
+  }
+
+  // vehicleSlug is optional at the API level (older/non-RC sessions could
+  // still exist) but the seat page always sends one now that picking a
+  // model is part of choosing a session. Re-checked fresh here rather
+  // than trusting whatever the client saw a few seconds ago in the
+  // picker, someone else could have taken the last free unit in that gap.
+  let vehicleModel = null;
+  if (vehicleSlug) {
+    const { models } = await getVehicleAvailabilityNow(env.DB);
+    vehicleModel = models.find((m) => m.slug === vehicleSlug);
+    if (!vehicleModel) {
+      return Response.json({ error: "That vehicle isn't available." }, { status: 400 });
+    }
+    if (vehicleModel.available <= 0) {
+      return Response.json({ error: `No ${vehicleModel.name} free right now, pick another.` }, { status: 409 });
+    }
+    if (trailer && !vehicleModel.has_trailer_option) {
+      return Response.json({ error: `${vehicleModel.name} doesn't take a trailer.` }, { status: 400 });
+    }
   }
 
   const seat = await env.DB.prepare(`SELECT * FROM seats WHERE id = ?`).bind(seatId).first();
@@ -98,10 +119,13 @@ export async function onRequestPost({ params, request, env }) {
   const accessToken = crypto.randomUUID();
 
   const insert = await env.DB.prepare(
-    `INSERT INTO sessions (seat_id, tier, started_at, ends_at, square_customer_id, square_card_id, access_token)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO sessions (seat_id, tier, started_at, ends_at, square_customer_id, square_card_id, access_token, vehicle_model_id, trailer)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(seatId, tier, startedAt.toISOString(), endsAt.toISOString(), customerId, cardId, accessToken)
+    .bind(
+      seatId, tier, startedAt.toISOString(), endsAt.toISOString(), customerId, cardId, accessToken,
+      vehicleModel ? vehicleModel.id : null, trailer && vehicleModel?.has_trailer_option ? 1 : 0
+    )
     .run();
 
   const sessionId = insert.meta.last_row_id;

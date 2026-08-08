@@ -189,8 +189,80 @@ function renderTierPicker() {
   `;
 
   document.querySelectorAll(".start-tier-btn").forEach((btn) => {
-    btn.addEventListener("click", () => startTier(btn.dataset.tier));
+    btn.addEventListener("click", () => renderVehiclePicker(btn.dataset.tier));
   });
+}
+
+// Shown after a tier's picked, before payment: which physical vehicle
+// this guest actually gets. Availability is live (see /api/vehicles),
+// out-of-stock models are shown but disabled rather than hidden, so a
+// guest can see "Wheel Loader Version 2.0" exists and just isn't free
+// right now, instead of wondering if it's not offered at all.
+let selectedVehicleSlug = null;
+let selectedTrailer = false;
+
+async function renderVehiclePicker(tierKey) {
+  app.innerHTML = `<div class="card"><p>Loading available vehicles...</p></div>`;
+  selectedVehicleSlug = null;
+  selectedTrailer = false;
+
+  let data;
+  try {
+    const res = await fetch("/api/vehicles");
+    data = await res.json();
+  } catch (e) {
+    app.innerHTML = `<div class="card error">Couldn't load the vehicle list, try again.</div>`;
+    return;
+  }
+
+  const cards = data.models.map((m) => `
+    <button class="vehicle-option${m.available <= 0 ? " disabled" : ""}" data-slug="${m.slug}" ${m.available <= 0 ? "disabled" : ""}>
+      <img src="${m.image_path}" alt="${m.name}" loading="lazy">
+      <strong>${m.name}</strong>
+      ${m.description ? `<small>${m.description}</small>` : ""}
+      <span class="vehicle-availability">${m.available > 0 ? `${m.available} available` : "None free right now"}</span>
+    </button>
+  `).join("");
+
+  app.innerHTML = `
+    <div class="card">
+      <h2>Pick your vehicle</h2>
+      <div class="vehicle-grid">${cards}</div>
+      <div id="trailer-toggle-wrap" style="display:none;">
+        <label><input type="checkbox" id="trailer-toggle"> Add a trailer (${data.trailersAvailable} of ${data.trailersTotal} free right now)</label>
+      </div>
+      <button id="vehicle-confirm-btn" disabled>Start</button>
+      <button id="vehicle-back-btn" class="secondary">Back</button>
+    </div>
+    <div id="card-container"></div>
+    <div id="tier-error" class="error"></div>
+  `;
+
+  document.querySelectorAll(".vehicle-option").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const model = data.models.find((m) => m.slug === btn.dataset.slug);
+      if (!model || model.available <= 0) return;
+      selectedVehicleSlug = model.slug;
+      document.querySelectorAll(".vehicle-option").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      document.getElementById("vehicle-confirm-btn").disabled = false;
+
+      const trailerWrap = document.getElementById("trailer-toggle-wrap");
+      if (model.has_trailer_option && data.trailersAvailable > 0) {
+        trailerWrap.style.display = "block";
+      } else {
+        trailerWrap.style.display = "none";
+        selectedTrailer = false;
+      }
+    });
+  });
+
+  document.getElementById("trailer-toggle").addEventListener("change", (e) => {
+    selectedTrailer = e.target.checked;
+  });
+
+  document.getElementById("vehicle-back-btn").addEventListener("click", renderTierPicker);
+  document.getElementById("vehicle-confirm-btn").addEventListener("click", () => startTier(tierKey));
 }
 
 async function startTier(tierKey) {
@@ -202,7 +274,7 @@ async function startTier(tierKey) {
     const res = await fetch(`/api/seats/${seatId}/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tier: tierKey }),
+      body: JSON.stringify({ tier: tierKey, vehicleSlug: selectedVehicleSlug, trailer: selectedTrailer }),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -220,7 +292,7 @@ async function startTier(tierKey) {
       const res = await fetch(`/api/seats/${seatId}/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: tierKey, sourceId }),
+        body: JSON.stringify({ tier: tierKey, sourceId, vehicleSlug: selectedVehicleSlug, trailer: selectedTrailer }),
       });
       if (!res.ok) {
         const err = await res.json();

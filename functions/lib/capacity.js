@@ -98,6 +98,89 @@ export async function getSeatAvailability(db) {
   };
 }
 
+// ---------------------------------------------------------------------
+// Vehicle model capacity. Same "protect the next hour for paid bookings"
+// idea as getSeatAvailability above, but per RC model instead of per
+// physical seat: a model's total_units is the hard ceiling on how many
+// of it can be out at once, whether that's walk-ins, bookings, or both.
+//
+// This deliberately mirrors getSeatAvailability's shape (same protect
+// window, same "due soon and not yet redeemed" logic) rather than
+// sharing code with it, since a walk-in's seat and a walk-in's model
+// pick are independent reservations against different pools.
+
+export async function getVehicleCatalog(db) {
+  const { results } = await db.prepare(
+    `SELECT id, slug, name, description, image_path, total_units, has_trailer_option, sort_order
+     FROM vehicle_models WHERE active = 1 ORDER BY sort_order`
+  ).all();
+  return results;
+}
+
+// "Right now" availability, for the walk-in QR flow (/start, /seat):
+// how many of each model (and how many trailers) a guest scanning in
+// this second could actually be handed.
+export async function getVehicleAvailabilityNow(db) {
+  const models = await getVehicleCatalog(db);
+  const trailersTotalRow = await db.prepare(`SELECT value FROM settings WHERE key = 'trailers_total'`).first();
+  const trailersTotal = Number(trailersTotalRow?.value) || 0;
+
+  const now = new Date();
+  const today = londonDateString(now);
+  const protectCutoff = new Date(now.getTime() + PROTECT_WINDOW_MINUTES * 60 * 1000);
+
+  const { results: dueBookings } = await db.prepare(
+    `SELECT id, slot_time, vehicle_breakdown_json, vehicle_redeemed_json, trailer_count, trailer_redeemed
+     FROM bookings
+     WHERE booking_date = ? AND payment_status = 'paid'`
+  )
+    .bind(today)
+    .all();
+
+  const dueSoon = dueBookings.filter((b) => {
+    const slotDate = londonSlotToUtcDate(today, b.slot_time);
+    return slotDate >= now && slotDate <= protectCutoff;
+  });
+
+  const { results: inUseRows } = await db.prepare(
+    `SELECT vehicle_model_id, COUNT(*) as n, SUM(trailer) as trailers
+     FROM sessions WHERE status = 'active' AND vehicle_model_id IS NOT NULL
+     GROUP BY vehicle_model_id`
+  ).all();
+  const inUseByModel = Object.fromEntries(inUseRows.map((r) => [r.vehicle_model_id, r.n]));
+  const trailersInUse = inUseRows.reduce((sum, r) => sum + (Number(r.trailers) || 0), 0);
+
+  let trailersReserved = 0;
+  const availability = models.map((model) => {
+    const inUse = inUseByModel[model.id] || 0;
+
+    let reserved = 0;
+    for (const booking of dueSoon) {
+      const breakdown = JSON.parse(booking.vehicle_breakdown_json || "{}");
+      const redeemed = JSON.parse(booking.vehicle_redeemed_json || "{}");
+      const stillNeeded = (Number(breakdown[model.slug]) || 0) - (Number(redeemed[model.slug]) || 0);
+      if (stillNeeded > 0) reserved += stillNeeded;
+    }
+
+    return {
+      ...model,
+      inUse,
+      available: Math.max(0, model.total_units - inUse - reserved),
+    };
+  });
+
+  for (const booking of dueSoon) {
+    const stillNeeded = (Number(booking.trailer_count) || 0) - (Number(booking.trailer_redeemed) || 0);
+    if (stillNeeded > 0) trailersReserved += stillNeeded;
+  }
+
+  return {
+    models: availability,
+    trailersTotal,
+    trailersAvailable: Math.max(0, trailersTotal - trailersInUse - trailersReserved),
+  };
+}
+
 // Rough wait estimate for a walk-in group bigger than what's free right
 // now. Looks at the soonest-ending active sessions, since a seat is only
 // actually usable by the group once it's ended, and takes the Nth

@@ -7,6 +7,13 @@ let bookingOpensDate = null;
 // form. Still fully available in person. See functions/api/bookings/index.js
 // for the matching server-side block.
 const tierCounts = { tier_2: 0, tier_3: 0 };
+// Which model each person in the party wants, keyed by vehicle_models.slug
+// (see migration 0018), plus how many of the picked Scania trucks want a
+// trailer. Populated from /api/vehicles once it loads.
+let vehicleModels = null;
+let trailersTotal = 0;
+const vehicleBreakdown = {};
+let trailerCount = 0;
 // Every slot on the picker starts on this grid, matches how sessions are
 // actually scheduled at the seats.
 const SLOT_GRANULARITY_MINUTES = 30;
@@ -21,9 +28,14 @@ const opensNotice = document.getElementById("opens-notice");
 // timezone.
 const todayLondon = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
 dateInput.min = todayLondon;
-dateInput.addEventListener("change", () => {
-  populateTimeSlots();
-});
+// iOS Safari's native date-picker wheel doesn't reliably fire "change"
+// until the field loses focus, on some devices that only happens once
+// the user taps elsewhere, so the time-slot dropdown can be left stuck
+// on "Pick a date first" even though a date's already been picked.
+// "input" fires the moment the wheel value changes, so listening to
+// both events covers desktop and mobile.
+dateInput.addEventListener("change", populateTimeSlots);
+dateInput.addEventListener("input", populateTimeSlots);
 
 async function loadConfig() {
   try {
@@ -61,6 +73,128 @@ async function loadConfig() {
 }
 loadConfig();
 
+// Separate fetch from loadConfig on purpose: /api/vehicles is its own
+// endpoint (see functions/api/vehicles/index.js) and one failing shouldn't
+// take the other down with it. The "available" counts shown here are a
+// live "right now" figure, a rough steer for whoever's filling the form
+// in, not a guarantee for whatever future date they end up picking, the
+// real check happens server-side against that specific slot when they
+// submit (see /api/bookings).
+async function loadVehicles() {
+  try {
+    const res = await fetch("/api/vehicles");
+    const data = await res.json();
+    vehicleModels = data.models;
+    trailersTotal = data.trailersTotal;
+    renderVehiclePickers();
+  } catch (e) {
+    document.getElementById("vehicle-pickers").innerHTML =
+      `<p class="error">Couldn't load the vehicle list, refresh the page before booking.</p>`;
+  }
+}
+loadVehicles();
+
+function partySize() {
+  return Object.values(tierCounts).reduce((a, b) => a + b, 0);
+}
+
+function vehicleAssignedCount() {
+  return Object.values(vehicleBreakdown).reduce((a, b) => a + b, 0);
+}
+
+function scaniaPickCount() {
+  return (vehicleBreakdown["scania-770s-red"] || 0) + (vehicleBreakdown["scania-770s-green"] || 0);
+}
+
+function renderVehiclePickers() {
+  const container = document.getElementById("vehicle-pickers");
+  if (!vehicleModels) return;
+
+  const rows = vehicleModels.map((m) => `
+    <div class="item-row vehicle-item-row">
+      <div class="vehicle-info">
+        <img src="${m.image_path}" alt="${m.name}" loading="lazy">
+        <div>
+          ${m.name}<br>
+          <small>${m.description || ""}</small>
+        </div>
+      </div>
+      <div class="qty-controls">
+        <button type="button" data-slug="${m.slug}" data-dir="-1">-</button>
+        <span id="vqty-${m.slug}">0</span>
+        <button type="button" data-slug="${m.slug}" data-dir="1">+</button>
+      </div>
+    </div>
+  `).join("");
+
+  const trailerModelsExist = vehicleModels.some((m) => m.has_trailer_option);
+
+  container.innerHTML = rows + (trailerModelsExist ? `
+    <div class="item-row vehicle-item-row">
+      <div class="vehicle-info"><div>Trailer for a Scania truck<br><small>Optional, ${trailersTotal} in total</small></div></div>
+      <div class="qty-controls">
+        <button type="button" id="trailer-minus">-</button>
+        <span id="vqty-trailer">0</span>
+        <button type="button" id="trailer-plus">+</button>
+      </div>
+    </div>
+  ` : "");
+
+  container.querySelectorAll("button[data-slug]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const slug = btn.dataset.slug;
+      const dir = Number(btn.dataset.dir);
+      const model = vehicleModels.find((m) => m.slug === slug);
+      const current = vehicleBreakdown[slug] || 0;
+      const next = Math.max(0, current + dir);
+      // Client-side cap is the model's total physical units, a coarse
+      // guardrail so the form doesn't visibly let someone pick 6 Wheel
+      // Loaders when only 2 exist. The real, slot-specific capacity
+      // check happens server-side (see /api/bookings).
+      if (dir > 0 && next > model.total_units) return;
+      vehicleBreakdown[slug] = next;
+      if (next === 0) delete vehicleBreakdown[slug];
+      document.getElementById(`vqty-${slug}`).textContent = next;
+      if (!model.has_trailer_option) return;
+      // Fewer Scania picks than trailers already requested: trim the
+      // trailer count down so it can never outnumber the trucks it'd
+      // attach to.
+      if (scaniaPickCount() < trailerCount) {
+        trailerCount = scaniaPickCount();
+        document.getElementById("vqty-trailer").textContent = trailerCount;
+      }
+      updateVehicleTotal();
+    });
+  });
+
+  const trailerMinus = document.getElementById("trailer-minus");
+  const trailerPlus = document.getElementById("trailer-plus");
+  if (trailerMinus && trailerPlus) {
+    trailerMinus.addEventListener("click", () => {
+      trailerCount = Math.max(0, trailerCount - 1);
+      document.getElementById("vqty-trailer").textContent = trailerCount;
+      updateVehicleTotal();
+    });
+    trailerPlus.addEventListener("click", () => {
+      const next = trailerCount + 1;
+      if (next > trailersTotal || next > scaniaPickCount()) return;
+      trailerCount = next;
+      document.getElementById("vqty-trailer").textContent = trailerCount;
+      updateVehicleTotal();
+    });
+  }
+
+  updateVehicleTotal();
+}
+
+function updateVehicleTotal() {
+  const el = document.getElementById("vehicle-total-line");
+  const assigned = vehicleAssignedCount();
+  const needed = partySize();
+  el.textContent = needed > 0 ? `${assigned} of ${needed} people have a vehicle picked` : "";
+  el.style.color = assigned === needed ? "" : "var(--yellow)";
+}
+
 function renderTierPickers() {
   const container = document.getElementById("tier-pickers");
   container.innerHTML = Object.keys(tierCounts).map((key) => {
@@ -87,6 +221,9 @@ function renderTierPickers() {
       // Session length picked affects how late a slot can start and still
       // finish before close, so the time options need to shift with it.
       populateTimeSlots();
+      // Party size just changed, so how many vehicles still need picking
+      // has too.
+      updateVehicleTotal();
     });
   });
 
@@ -153,6 +290,15 @@ function populateTimeSlots() {
     return;
   }
 
+  // Config (opening hours) hasn't come back from /api/config yet, usually
+  // just a slower mobile connection. loadConfig() re-runs this function
+  // itself once it lands, so this is a holding state, not a dead end.
+  if (!hours) {
+    slotSelect.innerHTML = `<option value="">Loading times...</option>`;
+    slotSelect.disabled = true;
+    return;
+  }
+
   const slots = slotsForDate(dateStr);
   if (slots.length === 0) {
     const day = new Date(`${dateStr}T00:00:00`).getDay();
@@ -204,6 +350,11 @@ document.getElementById("booking-form").addEventListener("submit", async (e) => 
     return;
   }
 
+  if (vehicleAssignedCount() !== partySize()) {
+    errorEl.textContent = "Pick a vehicle for everyone in the party before continuing.";
+    return;
+  }
+
   if (bookingOpensDate && document.getElementById("bookingDate").value < bookingOpensDate) {
     errorEl.textContent = `We're not taking bookings for that date yet, online booking opens from ${bookingOpensDate}.`;
     return;
@@ -215,6 +366,8 @@ document.getElementById("booking-form").addEventListener("submit", async (e) => 
     email: document.getElementById("email").value,
     phone: document.getElementById("phone").value,
     tierCounts,
+    vehicleBreakdown,
+    trailerCount,
     bookingDate: document.getElementById("bookingDate").value,
     slotTime: document.getElementById("slotTime").value,
     notes: document.getElementById("notes").value,
